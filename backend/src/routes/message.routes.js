@@ -1,0 +1,1 @@
+import {Router} from 'express';import {protect} from '../middleware/auth.js';import {inbox,conversation,send} from '../controllers/message.controller.js';const r=Router();r.use(protect);r.get('/inbox',inbox);r.get('/conversation/:userId',conversation);r.post('/',send);export default r;

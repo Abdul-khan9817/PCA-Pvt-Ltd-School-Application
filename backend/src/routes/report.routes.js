@@ -1,0 +1,1 @@
+import {Router} from 'express';import {protect,authorize} from '../middleware/auth.js';import {overview} from '../controllers/report.controller.js';const r=Router();r.get('/overview',protect,authorize('admin','principal','vice_principal'),overview);export default r;

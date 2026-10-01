@@ -1,0 +1,1 @@
+import {Router} from 'express';import {protect,authorize} from '../middleware/auth.js';import {stats} from '../controllers/dashboard.controller.js';const r=Router();r.get('/stats',protect,authorize('admin','principal','vice_principal','teacher','student','parent'),stats);export default r;

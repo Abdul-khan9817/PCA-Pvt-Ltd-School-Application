@@ -1,0 +1,2 @@
+import {Router} from 'express';import {protect,authorize} from '../middleware/auth.js';import {list,create,submit,submissions,gradeSubmission} from '../controllers/assignment.controller.js';
+const r=Router();r.use(protect);r.get('/',list);r.post('/',authorize('admin','teacher'),create);r.post('/:id/submit',authorize('student'),submit);r.get('/:id/submissions',authorize('admin','principal','vice_principal','teacher'),submissions);r.patch('/submissions/:id/grade',authorize('admin'),gradeSubmission);export default r;

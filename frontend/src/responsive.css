@@ -1,0 +1,201 @@
+/* ============================================================================
+   RESPONSIVE DESIGN — All Device Sizes
+   ----------------------------------------------------------------------------
+   IMPORTANT: React renders inline styles into the DOM `style` attribute using
+   standard CSS syntax — always kebab-case ("grid-template-columns: ...",
+   "max-width: ...", "font-size: ..."), regardless of the camelCase JS keys
+   used in JSX ({ gridTemplateColumns: ... }). Attribute selectors below MUST
+   match the kebab-case, rendered form, or they will never match anything.
+   ============================================================================ */
+
+/* ── Large screens: fluid stat grids ─────────────────────────────────────── */
+@media (max-width: 1536px) {
+  [style*="grid-template-columns: repeat(5,"] { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important; }
+  [style*="grid-template-columns: repeat(4,"] { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important; }
+  [style*="grid-template-columns: repeat(3,"] { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; }
+}
+
+/* ── Tablets 768 – 1024 px ────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  [style*="padding: 28"] { padding: 20px !important; }
+
+  /* 2-column chart/detail grids → single column on smaller tablets */
+  [style*="grid-template-columns: minmax(0, 1"] { grid-template-columns: 1fr !important; }
+
+  /* Modals: never wider than the viewport (any max-width value) */
+  [style*="max-width:"] { max-width: calc(100vw - 32px) !important; }
+}
+
+/* ── Small tablets / large phones: 640 – 768 px ──────────────────────────── */
+@media (max-width: 768px) {
+  [style*="padding: 28"] { padding: 16px !important; }
+  [style*="gap: 20"]     { gap: 16px !important; }
+
+  /* Tables: horizontal scroll instead of wrapping/overflowing */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  table thead, table tbody, table tr, table th, table td { display: table-cell; }
+
+  /* Hard-coded wide pixel widths on non-table elements → fluid.
+     Covers both fixed `width:` and `min-width:` set to a wide value. */
+  div[style*="width: 1200px"], div[style*="min-width: 1200px"],
+  div[style*="width: 900px"],  div[style*="min-width: 900px"],
+  div[style*="width: 800px"],  div[style*="min-width: 800px"],
+  section[style*="width"], section[style*="min-width"] {
+    max-width: 100% !important; min-width: 0 !important; width: 100% !important;
+  }
+
+  /* Flex rows → wrap so items don't overflow */
+  [style*="display: flex"][style*="gap:"] { flex-wrap: wrap; }
+
+  /* Modals: full-width on mobile (any max-width value) */
+  [style*="max-width:"] {
+    max-width: calc(100vw - 24px) !important;
+  }
+
+  /* Any multi-column grid → single column, including inside portaled add/edit
+     modals (Portal renders to document.body, outside .edumanage-page, so the
+     page-scoped collapse rule in styles.css never reaches them). The calendar
+     day-grid opts back out via .edumanage-calendar-grid below. */
+  [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+}
+
+/* ── Phones: below 640 px ────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  [style*="padding: 28"] { padding: 12px !important; }
+  [style*="padding: 22"] { padding: 14px !important; }
+  [style*="gap: 20"]     { gap: 12px !important; }
+  [style*="gap: 16"]     { gap: 12px !important; }
+
+  /* Tables: smaller font + padding */
+  table { font-size: 12px; }
+  table th, table td { padding: 8px 10px !important; }
+
+  /* Buttons: full width when they were meant to share a flex row */
+  button[style*="flex: 1"] { width: 100% !important; }
+
+  /* Large heading/stat font sizes step down a size — never below 12px */
+  [style*="font-size: 28"] { font-size: 20px !important; }
+  [style*="font-size: 24"] { font-size: 18px !important; }
+  [style*="font-size: 22"] { font-size: 17px !important; }
+  [style*="font-size: 20"] { font-size: 16px !important; }
+
+  /* Prevent any inline fixed width from overflowing on phones */
+  [style*="width: 600px"], [style*="min-width: 600px"] {
+    max-width: 100% !important; width: 100% !important; min-width: 0 !important;
+  }
+}
+
+/* ── Extra-small phones: below 480 px ───────────────────────────────────── */
+@media (max-width: 480px) {
+  [style*="padding: 28"]       { padding: 10px !important; }
+  [style*="border-radius: 14"] { border-radius: 10px !important; }
+  [style*="font-size: 15"]     { font-size: 13px !important; }
+
+  /* Modals: edge-to-edge on very small phones */
+  [style*="max-width:"] { max-width: calc(100vw - 12px) !important; }
+}
+
+/* ── Shared Modal card + ad-hoc page-level modals: tighter padding on phones,
+   so content isn't cramped ── */
+@media (max-width: 480px) {
+  .edumanage-modal-card { padding: 18px !important; }
+
+  /* AdminStudents/Teachers/Salary/UserManagement/etc. all use the same
+     pattern: a fixed full-viewport overlay whose direct child is the white
+     card. Tighten that card's padding on small phones too. */
+  [style*="position: fixed"] > div[style*="border-radius"] {
+    padding: 16px !important;
+  }
+}
+
+/* ── Generic responsive-table pattern ────────────────────────────────────────
+   Add className="rtable" to any <table>, plus data-label="..." on each <td>
+   matching its column header, and it stacks into cards on mobile automatically
+   — no per-page bespoke layout needed. Special cells:
+     - class "rtable-full"    → identity cell (avatar+name block): no label, full width
+     - class "rtable-actions" → action-button cell: buttons stack full-width, no label
+   ── */
+@media (max-width: 768px) {
+  table.rtable { min-width: 0 !important; width: 100% !important; }
+  table.rtable thead { display: none; }
+  table.rtable, table.rtable tbody, table.rtable tr, table.rtable td { display: block; width: 100%; }
+  table.rtable tr {
+    margin-bottom: 12px; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 10px 12px; overflow: hidden;
+  }
+  table.rtable tr:last-child { margin-bottom: 0; }
+  table.rtable td {
+    display: flex !important; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 7px 2px !important; border: none !important;
+    text-align: right; white-space: normal !important;
+  }
+  table.rtable td[data-label]::before {
+    content: attr(data-label); font-weight: 700; font-size: 11px; color: #4b5563;
+    text-align: left; flex-shrink: 0; text-transform: uppercase; letter-spacing: .02em;
+  }
+  table.rtable td.rtable-full {
+    display: block !important; text-align: left; padding-bottom: 10px !important;
+    border-bottom: 1px solid #e5e7eb !important; margin-bottom: 8px;
+  }
+  table.rtable td.rtable-actions {
+    display: flex !important; flex-direction: column; gap: 8px; padding-top: 8px !important;
+  }
+  table.rtable td.rtable-actions > div { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  table.rtable td.rtable-actions button,
+  table.rtable td.rtable-actions a,
+  table.rtable td.rtable-actions .motion-button {
+    width: 100% !important;
+  }
+  table.rtable input, table.rtable select { width: auto !important; min-width: 90px; }
+  table.rtable td.rtable-full-hide-mobile { display: none !important; }
+}
+
+/* ── Topbar: real class selectors instead of inline-style substring matching
+   (the topbar's `padding:"0 28px"` shorthand renders as "padding: 0px 28px"
+   in the DOM, which never matched the old "[style*=padding: 28]" hack) ── */
+@media (max-width: 1024px) {
+  .edumanage-topbar { padding: 0 18px !important; }
+  .edumanage-topbar-right { gap: 12px !important; }
+}
+@media (max-width: 768px) {
+  /* Clock takes real estate that's needed for the bell + account on phones */
+  .edumanage-topbar-clock { display: none !important; }
+}
+@media (max-width: 480px) {
+  .edumanage-topbar { padding: 0 10px !important; }
+  .edumanage-topbar-right { gap: 8px !important; }
+  /* Name + role text crowds the bell against the avatar on narrow phones —
+     collapse the account button down to avatar + chevron only */
+  .edumanage-topbar-account-text { display: none !important; }
+  .edumanage-topbar-chevron { display: none !important; }
+}
+
+/* ── Calendar / month picker: keep the 7-column day grid intact ─────────────
+   (overrides the ".edumanage-page [style*=grid-template-columns]" → 1fr rule
+   in styles.css and the blanket 768px rule above, which would otherwise
+   stack every calendar day into one column.) ── */
+.edumanage-calendar-grid.edumanage-calendar-grid {
+  /* doubled class = specificity (0,2,0), matching/beating the
+     ".edumanage-page [style*=...]" and "[style*=...]" collapse rules above
+     so this wins regardless of cascade order, not just source order */
+  grid-template-columns: repeat(7, 1fr) !important;
+}
+@media (max-width: 480px) {
+  .edumanage-monthpicker {
+    width: calc(100vw - 24px) !important;
+    max-width: 320px !important;
+  }
+}
+
+/* ── Print ───────────────────────────────────────────────────────────────── */
+@media print {
+  * { page-break-inside: avoid; }
+  table { page-break-inside: avoid; }
+  tr    { page-break-inside: avoid; }
+}

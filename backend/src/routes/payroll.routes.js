@@ -1,0 +1,11 @@
+import {Router} from 'express';
+import {protect,authorize} from '../middleware/auth.js';
+import {list,staffOptions,create,update,remove} from '../controllers/payroll.controller.js';
+const r=Router();
+r.use(protect);
+r.get('/staff-options',authorize('admin','principal','vice_principal'),staffOptions);
+r.get('/',authorize('admin','principal','vice_principal','teacher'),list);
+r.post('/',authorize('admin'),create);
+r.patch('/:id',authorize('admin'),update);
+r.delete('/:id',authorize('admin'),remove);
+export default r;

@@ -1,0 +1,2 @@
+import {Router} from 'express';import {protect,authorize} from '../middleware/auth.js';import {list,mark,markBulk} from '../controllers/attendance.controller.js';
+const r=Router();r.use(protect);r.get('/',authorize('admin','principal','vice_principal','teacher','student','parent'),list);r.post('/mark',authorize('admin','principal','vice_principal','teacher'),mark);r.post('/mark-bulk',authorize('admin','principal','vice_principal','teacher'),markBulk);export default r;

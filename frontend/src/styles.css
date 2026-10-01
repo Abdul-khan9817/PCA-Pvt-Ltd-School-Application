@@ -1,0 +1,320 @@
+*{box-sizing:border-box}
+html,body,#root{margin:0;height:100%;width:100%;overflow:hidden;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}
+body{background:#f0f2f8}
+
+/* Login page */
+.edumanage-login-page{
+  position:relative;
+  min-height:100dvh;
+  width:100%;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  overflow:hidden;
+  background:#dceaf5 url('/school-bg.jpg') center center / cover no-repeat;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.edumanage-login-overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(20,48,72,.10);
+  backdrop-filter:saturate(.96);
+}
+.edumanage-login-card{
+  position:relative;
+  z-index:1;
+  width:min(100%,520px);
+  max-height:calc(100dvh - 48px);
+  overflow:auto;
+  background:rgba(255,255,255,.985);
+  border:1px solid rgba(255,255,255,.95);
+  border-radius:22px;
+  padding:28px 36px 24px;
+  box-shadow:0 24px 60px rgba(15,23,42,.22),0 4px 18px rgba(15,23,42,.10);
+}
+.edumanage-login-logo{
+  width:58px;
+  height:58px;
+  margin:0 auto 14px;
+  border-radius:15px;
+  display:grid;
+  place-items:center;
+  color:#fff;
+  background:linear-gradient(135deg,#5b3df5,#6d4cff);
+  box-shadow:0 10px 24px rgba(91,61,245,.24);
+}
+.edumanage-login-heading{text-align:center;margin-bottom:20px}
+.edumanage-login-heading h1{margin:0;color:#17213a;font-size:32px;line-height:1.12;font-weight:800;letter-spacing:-.8px}
+.edumanage-login-heading p{margin:7px 0 0;color:#5a6585;font-size:15px;line-height:1.4}
+.edumanage-login-error{margin:0 0 14px;padding:10px 12px;border:1px solid #fecdd3;border-radius:10px;background:#fff1f2;color:#be123c;font-size:13px}
+.edumanage-login-label{display:block;margin:0 0 7px;color:#18213a;font-size:14px;font-weight:700}
+.edumanage-login-input-wrap{position:relative;margin-bottom:15px}
+.edumanage-login-input-wrap input{
+  display:block;width:100%;height:52px;padding:0 46px 0 46px;border:1px solid #d9dfeb;border-radius:13px;outline:none;background:#fff;color:#18213a;font-size:15px;transition:border-color .18s,box-shadow .18s,background .18s;
+}
+.edumanage-login-input-wrap input::placeholder{color:#7b87a2}
+.edumanage-login-input-wrap input:focus{border-color:#7183f8;box-shadow:0 0 0 4px rgba(91,70,245,.10);background:#fff}
+.edumanage-login-input-icon{position:absolute;left:15px;top:16px;color:#6b78a0;pointer-events:none}
+.edumanage-password-toggle{position:absolute;right:9px;top:8px;width:44px;height:44px;border:0;border-radius:9px;background:transparent;color:#6b78a0;display:grid;place-items:center;cursor:pointer;touch-action:manipulation}
+.edumanage-password-toggle:hover{background:#f4f5fa;color:#3d4f75}
+.edumanage-login-forgot-row{display:flex;justify-content:flex-end;margin:0 0 18px}
+.edumanage-login-forgot{padding:4px 0;border:0;background:transparent;color:#3d56d4;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation}
+.edumanage-login-submit{width:100%;height:50px;border:0;border-radius:13px;background:linear-gradient(135deg,#4e5cf5,#7345f5);color:#fff;font-size:16px;font-weight:750;cursor:pointer;box-shadow:0 12px 24px rgba(83,76,245,.22);transition:transform .18s,box-shadow .18s,opacity .18s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.edumanage-login-submit:hover:not(:disabled){box-shadow:0 15px 28px rgba(83,76,245,.28)}
+.edumanage-login-submit:disabled{cursor:not-allowed;opacity:.7}
+/* Footer: #5e6e8a on white = 5.0:1 contrast (WCAG AA) */
+.edumanage-login-footer{text-align:center;margin:16px 0 0;color:#5e6e8a;font-size:12px}
+
+
+@media (max-height:760px) and (min-width:769px){
+  .edumanage-login-page{padding:16px}
+  .edumanage-login-card{padding:22px 32px 19px;border-radius:20px}
+  .edumanage-login-logo{width:52px;height:52px;margin-bottom:10px}
+  .edumanage-login-heading{margin-bottom:16px}
+  .edumanage-login-heading h1{font-size:29px}
+  .edumanage-login-heading p{font-size:14px;margin-top:4px}
+  .edumanage-login-input-wrap{margin-bottom:12px}
+  .edumanage-login-input-wrap input{height:47px}
+  .edumanage-login-input-icon{top:13px}
+  .edumanage-password-toggle{top:5px}
+  .edumanage-login-forgot-row{margin-bottom:14px}
+  .edumanage-login-submit{height:47px}
+  .edumanage-login-footer{margin-top:12px}
+}
+
+@media (max-width:600px){
+  .edumanage-login-page{padding:14px;background-position:center}
+  .edumanage-login-card{width:min(100%,460px);max-height:calc(100dvh - 28px);padding:24px 21px 21px;border-radius:19px}
+  .edumanage-login-logo{width:56px;height:56px;margin-bottom:12px}
+  .edumanage-login-heading{margin-bottom:18px}
+  .edumanage-login-heading h1{font-size:28px}
+  .edumanage-login-heading p{font-size:14px}
+}
+
+@media (max-width:400px){
+  .edumanage-login-card{padding:21px 17px 18px}
+  .edumanage-login-heading h1{font-size:25px}
+  .edumanage-login-input-wrap input{height:49px;font-size:14px}
+}
+
+/* Responsive application shell */
+.edumanage-shell{position:relative}
+.edumanage-sidebar-backdrop{display:none}
+.edumanage-topbar{min-width:0}
+
+@media (min-width:769px){
+  .edumanage-shell .edumanage-content{width:auto}
+  .edumanage-topbar{padding-left:24px!important;padding-right:24px!important}
+}
+
+@media (max-width:768px){
+  html,body,#root{width:100%;min-width:0;overflow-x:hidden}
+  .edumanage-shell{height:100dvh!important}
+  .edumanage-sidebar-backdrop{display:block;position:fixed;inset:0;border:0;background:rgba(2,6,23,.5);z-index:1100;cursor:pointer}
+  .edumanage-topbar{height:60px!important;padding:0 12px!important}
+  .edumanage-topbar-right{gap:7px!important}
+  .edumanage-topbar .edumanage-notification-label{display:none!important}
+  .edumanage-content main{padding-bottom:12px}
+  .edumanage-content main>div{min-width:0}
+  table{font-size:12px}
+  th,td{white-space:nowrap}
+  input,select,textarea{max-width:100%}
+}
+
+@media (max-width:520px){
+  .edumanage-login-right{padding:16px!important}
+  .edumanage-login-card{border-radius:18px!important;padding:26px 18px 22px!important}
+  .edumanage-topbar{height:58px!important}
+  .edumanage-topbar-left{max-width:58%}
+  .edumanage-topbar-right{max-width:42%}
+  .edumanage-topbar [style*="font-size: 13px"]{font-size:12px!important}
+  .edumanage-topbar [style*="font-size: 11px"]{font-size:10px!important}
+}
+
+/* Prevent fixed-width dashboard blocks from overflowing on phones.
+   Note: React renders inline styles as kebab-case in the DOM `style`
+   attribute (grid-template-columns, min-width — never the camelCase JSX
+   key), so selectors below must match that rendered form. */
+@media (max-width:768px){
+  .edumanage-content [style*="grid-template-columns"]{min-width:0}
+  .edumanage-content [style*="width: 1200px"],
+  .edumanage-content [style*="min-width: 900px"]{max-width:100%!important}
+}
+
+.edumanage-page{width:100%;min-width:0;overflow-x:auto;overflow-y:visible}
+.edumanage-page>*{min-width:0}
+
+@media (max-width:768px){
+  .edumanage-page{padding:0!important}
+  .edumanage-page>*{width:100%!important;max-width:100%!important;min-width:0!important}
+  .edumanage-page [style*="padding:28px"],
+  .edumanage-page [style*="padding: 28px"],
+  .edumanage-page [style*="padding:30px"],
+  .edumanage-page [style*="padding: 30px"]{padding:16px!important}
+  .edumanage-page [style*="grid-template-columns"]{grid-template-columns:1fr!important}
+  .edumanage-page [style*="width: 600px"],
+  .edumanage-page [style*="min-width: 600px"]{max-width:100%!important;width:100%!important;min-width:0!important}
+}
+
+@media (max-width:480px){
+  .edumanage-page [style*="padding:22px"],
+  .edumanage-page [style*="padding: 22px"],
+  .edumanage-page [style*="padding:20px"],
+  .edumanage-page [style*="padding: 20px"]{padding:14px!important}
+  .edumanage-page [style*="gap:24px"],
+  .edumanage-page [style*="gap: 24px"],
+  .edumanage-page [style*="gap:20px"],
+  .edumanage-page [style*="gap: 20px"]{gap:12px!important}
+}
+
+
+/* Stable sidebar interaction: automatic expand/collapse with calm hover feedback. */
+.edumanage-shell .edumanage-nav-item{
+  position:relative!important;
+  overflow:hidden!important;
+  transition:background-color .18s ease, color .18s ease, border-color .18s ease!important;
+  transform:none!important;
+  box-shadow:none!important;
+}
+.edumanage-shell .edumanage-nav-item::after{
+  display:none!important;
+}
+.edumanage-shell .edumanage-nav-item:hover{
+  background:rgba(255,255,255,.075)!important;
+  transform:none!important;
+}
+.edumanage-shell .edumanage-nav-item[data-active="true"]{
+  animation:none!important;
+  transform:none!important;
+}
+
+.edumanage-shell .edumanage-logo-mark{
+  background:linear-gradient(135deg,#7c3aed,#4f6ef7)!important;
+  box-shadow:0 8px 22px rgba(79,110,247,.25);
+}
+.edumanage-shell .edumanage-logo-mark:hover{transform:none!important}
+
+/* Inputs get a polished focus lift without changing their dimensions. */
+.edumanage-shell input,.edumanage-shell select,.edumanage-shell textarea{
+  transition:border-color .2s ease,box-shadow .2s ease,background .2s ease!important;
+}
+.edumanage-shell input:focus,.edumanage-shell select:focus,.edumanage-shell textarea:focus{
+  outline:none!important; box-shadow:0 0 0 3px rgba(79,110,247,.12)!important;
+}
+
+/* Smooth page entrance; Framer Motion remains the primary page animation. */
+.edumanage-content main{scroll-behavior:smooth}
+.edumanage-content main>div{will-change:transform,opacity}
+
+/* Respect reduced-motion accessibility preferences. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* ── Mobile: constrain Topbar dropdown panels (notifications + profile menu) so they fit within the screen width ── */
+@media (max-width:768px){
+  .edumanage-topbar [style*="width:380"],
+  .edumanage-topbar [style*="width: 380"]{
+    width:calc(100vw - 24px)!important;
+    max-width:360px!important;
+    right:-8px!important;
+  }
+  .edumanage-topbar [style*="width:220"],
+  .edumanage-topbar [style*="width: 220"]{
+    width:200px!important;
+    right:-8px!important;
+  }
+}
+
+/* ── Global touch optimisations (removes 300 ms tap delay on all devices) ── */
+button, a, [role="button"], input[type="submit"], input[type="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Minimum 44×44 px touch target for interactive elements on mobile */
+@media (max-width:768px){
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Nav buttons in sidebar are allowed to be smaller since they have padding */
+  .edumanage-nav-item {
+    min-height: unset;
+    min-width: unset;
+  }
+}
+
+/* ── Sidebar contrast fix ─────────────────────────────────────────────────
+   rgba(255,255,255,.45) on #1e2a4a navy = ~3.1:1 contrast (WCAG AA fail).
+   Bumped to .72 = 4.6:1 which passes AA.
+   ──────────────────────────────────────────────────────────────────────── */
+.edumanage-shell nav span,
+.edumanage-shell nav [style*="rgba(255,255,255,.6)"] {
+  color: rgba(255,255,255,.78) !important;
+}
+.edumanage-shell [style*="rgba(255,255,255,.35)"] {
+  color: rgba(255,255,255,.60) !important;
+}
+.edumanage-shell [style*="rgba(255,255,255,.45)"] {
+  color: rgba(255,255,255,.72) !important;
+}
+
+/* ── Topbar contrast fix ──────────────────────────────────────────────────
+   Subtitle/date text: rgba(255,255,255,.45) → .72 on navy background.
+   ──────────────────────────────────────────────────────────────────────── */
+.edumanage-topbar [style*="rgba(255,255,255,.45)"] {
+  color: rgba(255,255,255,.72) !important;
+}
+.edumanage-topbar-left,
+.edumanage-topbar-title,
+.edumanage-topbar-right,
+.edumanage-topbar-tools { min-width: 0; }
+.edumanage-topbar-title { overflow-wrap: anywhere; }
+.edumanage-topbar-right { overflow: visible; }
+
+.grade-toolbar { min-width: 0; }
+.grade-page { width: 100%; max-width: 1240px; margin: 0 auto; padding: 14px 20px 24px; box-sizing: border-box; }
+.grade-class-picker { flex: 0 1 360px; width: 100%; }
+.grade-terms { flex: 0 1 auto; min-width: 0; }
+.grade-sync { flex: 0 0 auto; }
+
+@media (max-width: 768px) {
+  .grade-page { width: 100%; padding: 12px 14px 20px !important; }
+  .grade-toolbar { align-items: stretch !important; }
+  .grade-toolbar-controls { width: 100%; min-width: 0 !important; align-items: stretch !important; gap: 10px !important; }
+  .grade-class-picker { flex: 1 1 100%; min-width: 0 !important; max-width: none !important; }
+  .grade-terms { flex: 1 1 100%; width: 100%; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px !important; }
+  .grade-terms > button { width: 100%; min-width: 0; }
+  .grade-sync { width: 100%; margin-left: 0 !important; justify-content: flex-start; }
+}
+
+/* ── Overscroll containment ── prevent full-page bounce on iOS */
+.edumanage-content main,
+.edumanage-shell nav {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── will-change only where actively animating (reduces memory pressure) ── */
+.edumanage-content main>div {
+  will-change: transform, opacity;
+  contain: layout style;
+}
+
+/* ── Prevent invisible/zero-size images from causing layout shifts ─────── */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Accessible focus-visible ring (keyboard only, not on mouse click) ─── */
+:focus-visible {
+  outline: 3px solid rgba(79,110,247,.60);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}

@@ -1,0 +1,12 @@
+import {Router} from 'express';
+import {login,refresh,logout,me,changePassword,forgotPassword,resetPassword} from '../controllers/auth.controller.js';
+import {protect} from '../middleware/auth.js';
+const r=Router();
+r.post('/login',login);
+r.post('/refresh',refresh);
+r.post('/forgot-password',forgotPassword);
+r.post('/reset-password',resetPassword);
+r.post('/logout',protect,logout);
+r.get('/me',protect,me);
+r.post('/change-password',protect,changePassword);
+export default r;

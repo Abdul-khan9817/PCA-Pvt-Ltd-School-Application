@@ -1,0 +1,3 @@
+import Notification from '../models/Notification.js';
+export async function list(req,res){const page=Math.max(1,Number(req.query.page)||1),limit=Math.min(100,Math.max(1,Number(req.query.limit)||20));const q={user:req.user._id};const [data,total]=await Promise.all([Notification.find(q).sort({createdAt:-1}).skip((page-1)*limit).limit(limit),Notification.countDocuments(q)]);res.json({success:true,data,meta:{page,limit,total,pages:Math.ceil(total/limit)}});}
+export async function read(req,res){const n=await Notification.findOneAndUpdate({_id:req.params.id,user:req.user._id},{read:true},{new:true});if(!n)return res.status(404).json({success:false,message:'Notification not found'});res.json({success:true,data:n});}

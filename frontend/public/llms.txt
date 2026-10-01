@@ -1,0 +1,8 @@
+# PCA Pvt. Ltd
+
+> PCA Pvt. Ltd is a school management platform for admins, teachers and students to manage classes, timetables, attendance, grades and fees. Dashboards require login.
+
+## Public pages
+
+- [Home](http://localhost:4173/): Platform overview
+- [Login](http://localhost:4173/login): Sign-in for school staff, teachers and students

@@ -1,0 +1,1 @@
+import {Router} from 'express';import {protect} from '../middleware/auth.js';import {list,read} from '../controllers/notification.controller.js';const r=Router();r.use(protect);r.get('/',list);r.patch('/:id/read',read);export default r;

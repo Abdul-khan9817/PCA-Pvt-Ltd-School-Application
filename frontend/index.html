@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PCA Pvt. Ltd</title>
+    <meta name="description" content="PCA Pvt. Ltd is a school management platform for admins, teachers, and students to manage classes, timetables, attendance, grades, and fees." />
+    <meta name="theme-color" content="#1e2a4a" />
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"PCA Pvt. Ltd","applicationCategory":"BusinessApplication","operatingSystem":"Web"}
+    </script>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" as="image" href="/school-bg.jpg" fetchpriority="high" />
+    <link rel="shortcut icon" href="/favicon.svg" />
+
+
+
+    <!--
+      Inline critical CSS: paint a matching background colour immediately so
+      the user sees the correct background before the stylesheet loads.
+      This also prevents a white flash (FOUC) on slow connections.
+    -->
+    <style>
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        background: #1e2a4a;
+        font-family: Inter, system-ui, -apple-system, sans-serif;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+      /* Inline loading state so the screen is never blank */
+      #root:empty::after {
+        content: '';
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
