@@ -42,21 +42,6 @@ Do not start a second backend on port 5000. If port 5000 is already in use, stop
 
 In development, the backend accepts localhost frontend ports such as 5173 and 5174, so Vite changing ports will not cause a CORS failure.
 
-## Admin login
-
-- Email: `admin@edumanage.com`
-- Password: `Password@123`
-
-The backend automatically creates this admin account if it does not exist. If the older seeded account `admin@school.edu` exists, it is migrated to `admin@edumanage.com` without deleting the database.
-
-To clear the database and leave only the admin account for entering real school data:
-
-```bash
-npm run clear-data
-```
-
-**Warning:** this command permanently deletes all PCA Pvt. Ltd records except user accounts with administrative roles, then creates or resets the default admin account. Use it only when you intentionally want a blank school database.
-
 ## Project structure
 
 ```text
