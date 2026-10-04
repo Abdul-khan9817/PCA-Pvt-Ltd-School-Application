@@ -67,6 +67,7 @@ function StudentTimetable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDay, setSelectedDay] = useState("");
+  const [dayOpen, setDayOpen] = useState(false);
   const showGrid = useIsGridSize();
 
   const load = () => {
@@ -162,30 +163,52 @@ function StudentTimetable() {
       .sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
     const now = nowHHMM();
     const isToday = day === today;
+    const dayText = d => `${d}${d === today ? " (Today)" : ""}`;
 
     return (
       <div>
-        {/* Day chips */}
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, marginBottom: 14, WebkitOverflowScrolling: "touch" }}>
-          {days.map(d => {
-            const t = dayThemes[d];
-            const on = d === day;
-            const count = entries.filter(e => e.day === d).length;
-            return (
-              <button key={d} type="button" onClick={() => setSelectedDay(d)} style={{
-                flex: "1 0 auto", minWidth: 58, padding: "9px 12px", borderRadius: 12, cursor: "pointer",
-                border: `1.5px solid ${on ? t.header : C.border}`,
-                background: on ? t.header : C.white, color: on ? "#fff" : C.text,
-                fontWeight: 700, fontSize: 13, position: "relative", lineHeight: 1.2
-              }}>
-                {d.slice(0, 3)}
-                <div style={{ fontSize: 10, fontWeight: 500, opacity: 0.8 }}>{count} {count === 1 ? "class" : "classes"}</div>
-                {d === today && (
-                  <span style={{ position: "absolute", top: 5, right: 6, width: 7, height: 7, borderRadius: "50%", background: on ? "#fde68a" : "#f59e0b" }} />
-                )}
-              </button>
-            );
-          })}
+        {/* Day dropdown */}
+        <div style={{ position: "relative", marginBottom: 14 }}>
+          {dayOpen && <div onClick={() => setDayOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />}
+          <button
+            type="button"
+            onClick={() => setDayOpen(o => !o)}
+            style={{
+              width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 8, cursor: "pointer",
+              border: `1.5px solid ${theme.header}`, background: theme.header, color: "#fff",
+              fontSize: 14, fontWeight: 700, textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8
+            }}
+          >
+            <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dayText(day)}</span>
+            <span style={{ fontSize: 11, transform: dayOpen ? "rotate(180deg)" : "none" }}>▼</span>
+          </button>
+
+          {dayOpen && (
+            <div style={{
+              position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 10, boxSizing: "border-box",
+              background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden",
+              boxShadow: "0 8px 20px rgba(15,23,42,.15)"
+            }}>
+              {days.map(d => {
+                const on = d === day;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => { setSelectedDay(d); setDayOpen(false); }}
+                    style={{
+                      display: "block", width: "100%", boxSizing: "border-box", padding: "11px 12px", border: "none",
+                      borderLeft: `4px solid ${dayThemes[d].header}`, cursor: "pointer", textAlign: "left",
+                      background: on ? dayThemes[d].bg : C.white, color: dayThemes[d].accent,
+                      fontSize: 14, fontWeight: on ? 700 : 600
+                    }}
+                  >
+                    {dayText(d)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div style={{ fontSize: 13, color: C.muted, marginBottom: 10, fontWeight: 600 }}>

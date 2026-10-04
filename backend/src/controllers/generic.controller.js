@@ -175,7 +175,19 @@ export const makeCrud = (
           await validate(payload);
         }
 
-        const created = await Model.create(payload);
+        // Student and Staff profiles are one-to-one with a User.  Their
+        // account-creation flows may create the linked profile before the
+        // explicit resource POST arrives, so make that POST idempotent.
+        const hasUserLink = Boolean(
+          ['Student', 'Staff'].includes(Model.modelName) && payload.user
+        );
+        const created = hasUserLink
+          ? await Model.findOneAndUpdate(
+              { user: payload.user },
+              { $set: payload },
+              { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+            )
+          : await Model.create(payload);
 
         // Run optional post-save hook after creating the document.
         if (afterSave) {

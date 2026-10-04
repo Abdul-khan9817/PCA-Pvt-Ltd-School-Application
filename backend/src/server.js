@@ -27,7 +27,7 @@ io.use(async (socket, next) => {
   }
 });
 app.use(helmet({crossOriginResourcePolicy:{policy:'cross-origin'}}));app.use(cors(corsOptions));app.use(express.json({limit:'2mb'}));app.use(express.urlencoded({extended:true}));app.use(cookieParser());app.use(morgan(env.nodeEnv==='production'?'combined':'dev'));app.use(rateLimit({windowMs:15*60*1000,max:Number(process.env.RATE_LIMIT_MAX||(env.nodeEnv==='production'?300:5000)),standardHeaders:true,legacyHeaders:false}));
-app.use('/uploads',express.static(path.join(process.cwd(),'uploads')));app.get('/api/health',(req,res)=>res.json({success:true,status:'ok',service:'EduManage API',time:new Date().toISOString()}));
+app.use('/uploads',express.static(path.join(process.cwd(),'uploads')));app.get('/api/health',(req,res)=>res.json({success:true,status:'ok',service:'PCA Pvt. Ltd API',time:new Date().toISOString()}));
 app.use('/api/auth',authRoutes);app.use('/api/users',userRoutes);app.use('/api/students',studentRoutes);app.use('/api/staff',staffRoutes);app.use('/api/classes',classRoutes);app.use('/api/subjects',subjectRoutes);app.use('/api/attendance',attendanceRoutes);app.use('/api/grades',gradeRoutes);app.use('/api/fees',feeRoutes);app.use('/api/payroll',payrollApiRoutes);app.use('/api/leaves',leaveRoutes);app.use('/api/assignments',assignmentRoutes);app.use('/api/timetable',timetableRoutes);app.use('/api/announcements',announcementRoutes);app.use('/api/messages',messageRoutes);app.use('/api/notifications',notificationRoutes);app.use('/api/dashboard',dashboardRoutes);app.use('/api/exams',examRoutes);app.use('/api/profile',profileRoutes);app.use('/api/reports',reportRoutes);
 app.use('/api/staff-attendance',staffAttendanceRoutes);
 io.on('connection',socket=>{
@@ -135,13 +135,13 @@ if (env.nodeEnv !== 'test') {
     .then(() => {
       server.on('error', (err) => {
         if (err.code === 'EADDRINUSE') {
-          console.error(`[EduManage Backend] Port ${env.port} is already in use. Please stop the running process before restarting.`);
+          console.error(`[PCA Pvt. Ltd Backend] Port ${env.port} is already in use. Please stop the running process before restarting.`);
         } else {
-          console.error('[EduManage Backend] Server error:', err);
+          console.error('[PCA Pvt. Ltd Backend] Server error:', err);
         }
         process.exit(1);
       });
-      server.listen(env.port, () => console.log(`EduManage API running on http://localhost:${env.port}`));
+      server.listen(env.port, () => console.log(`PCA Pvt. Ltd API running on http://localhost:${env.port}`));
     })
     .catch(e => { console.error(e); process.exit(1); });
 }

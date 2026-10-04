@@ -21,17 +21,16 @@ function Sidebar({ role, active, setActive, collapsed, setCollapsed, onLogout, m
 
   const effectiveCollapsed = isMobile ? false : (collapsed && !hovered);
 
-  const isManagement = ["admin", "principal", "vice_principal"].includes(role);
-  const allNav = isManagement ? ADMIN_NAV : role === "teacher" ? TEACHER_NAV : STUDENT_NAV;
-  const logo = role === "admin" ? "Admin Portal" : role === "principal" || role === "vice_principal" ? "Management Portal" : role === "teacher" ? "Teacher Portal" : "Student Portal";
+  const isManagement = role === "admin";
+  const allNav = isManagement ? ADMIN_NAV : ["principal", "vice_principal", "teacher"].includes(role) ? TEACHER_NAV : STUDENT_NAV;
+  const logo = role === "admin" ? "Admin Portal" : ["principal", "vice_principal", "teacher"].includes(role) ? "Teacher Portal" : "Student Portal";
 
   // ✅ Remove logout from nav — we pin it at bottom always visible
     const navGroups = allNav.map(group => ({
     ...group,
     items: group.items.filter(item =>
       item.id !== "logout" &&
-      (role === "admin" || item.id !== "user-accounts") &&
-      (role !== "vice_principal" || item.id !== "fees")
+      (role === "admin" || item.id !== "user-accounts")
     ),
   })).filter(group => group.items.length > 0);
   

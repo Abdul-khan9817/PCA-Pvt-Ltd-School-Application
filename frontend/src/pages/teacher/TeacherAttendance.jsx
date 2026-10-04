@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, LayoutDashboard, GraduationCap, Users, BookOpen, ClipboardCheck, ListChecks, Megaphone, Calendar, DollarSign, UserCircle, LogOut, Bell, Search, ChevronDown, TrendingUp, Star, AlertTriangle, Eye, Trash2, Edit, Plus, X, Check, Clock, BarChart2, Award, Briefcase, Mail, Phone, Shield, CheckSquare, Settings2, Home, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "../../shared/ui";
-import { MonthPicker } from "../../components/common/MonthPicker";
+import { motion, AnimatePresence, LayoutDashboard, GraduationCap, Users, BookOpen, ClipboardCheck, ListChecks, Megaphone, DollarSign, UserCircle, LogOut, Bell, Search, ChevronDown, TrendingUp, Star, AlertTriangle, Eye, Trash2, Edit, Plus, X, Check, Clock, BarChart2, Award, Briefcase, Mail, Phone, Shield, CheckSquare, Settings2, Home, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "../../shared/ui";
 import { list } from "../../services/resource.service";
 import { api } from "../../services/apiClient";
 import { onResourceChange } from "../../services/socket.service";
@@ -8,10 +7,11 @@ import { C, ROW_COLORS } from "../../shared/runtime";
 
 function TeacherAttendance() {
   const [att, setAtt] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0,10));
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [studentHistory, setStudentHistory] = useState([]);
   const [saved, setSaved] = useState(false);
   const [error,setError]=useState("");
-  const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [dateRange, setDateRange] = useState(null);
 
   const mapStudentToAtt = (s, i) => ({
     id: s._id || s.id,
@@ -19,16 +19,37 @@ function TeacherAttendance() {
     roll: s.roll || `S${(i || 0) + 1}`,
     studentId: s._id || s.id,
     classId: s.classId?._id || s.classId || null,
-    status: "P"
+    status: ""
   });
 
   const loadStudents = () => {
     list("students","limit=2000")
       .then(r => {
         const studentList = r.data || r || [];
-        setAtt(studentList.map(mapStudentToAtt));
+        const mapped = studentList.map(mapStudentToAtt);
+        setAtt(mapped);
       })
       .catch((e)=>{ setError(e.message || "Failed to load students"); });
+  };
+
+  const loadAttendanceForDate = (date) => {
+    api.get(`/attendance?from=${date}&to=${date}`)
+      .then(r => {
+        const records = r.data || r || [];
+        const byStudent = new Map(records.map(record => [String(record.student?._id || record.student), record.status]));
+        setAtt(prev => prev.map(student => ({
+          ...student,
+          status: byStudent.get(String(student.studentId)) === "Present" ? "P" : byStudent.get(String(student.studentId)) === "Absent" ? "A" : byStudent.get(String(student.studentId)) === "Leave" ? "L" : ""
+        })));
+      })
+      .catch(() => {});
+  };
+
+  const loadStudentHistory = (studentId) => {
+    if (!studentId) return;
+    api.get(`/attendance?student=${studentId}`)
+      .then(r => setStudentHistory((r.data || r || []).filter(record => ["Present", "Absent", "Leave"].includes(record.status))))
+      .catch(() => setStudentHistory([]));
   };
 
   useEffect(()=>{
@@ -54,31 +75,31 @@ function TeacherAttendance() {
     });
 
     const unsubAtt = onResourceChange("attendance", change => {
-      if (change.data) {
-        const studentId = change.data.student?._id || change.data.student;
-        const statusCode = change.data.status === "Present" ? "P" : change.data.status === "Absent" ? "A" : "L";
-        setAtt(prev => prev.map(s => s.studentId === studentId ? { ...s, status: statusCode } : s));
-      }
+      loadAttendanceForDate(selectedDate);
+      loadStudentHistory(selectedStudentId);
     });
 
     return () => {
       unsubStudents?.();
       unsubAtt?.();
     };
-  },[]);
+  },[selectedDate, selectedStudentId]);
+
+  useEffect(() => { loadAttendanceForDate(selectedDate); }, [selectedDate, att.length]);
+  useEffect(() => { loadStudentHistory(selectedStudentId); }, [selectedStudentId]);
 
   const toggle=(id,status)=>{ setAtt(prev=>prev.map(s=>s.id===id?{...s,status}:s)); setSaved(false); };
   const present=att.filter(s=>s.status==="P").length;
   const absent=att.filter(s=>s.status==="A").length;
-  const late=att.filter(s=>s.status==="L").length;
+  const leave=att.filter(s=>s.status==="L").length;
 
   const handleSave = async () => { 
     try { 
-      const date = dateRange?.toDate || new Date().toISOString().slice(0,10);
-      const records = att.filter(s=>s.studentId).map(s=>({
+      const date = selectedDate;
+      const records = att.filter(s=>s.studentId && s.status).map(s=>({
         student: s.studentId,
         classId: s.classId,
-        status: s.status==="P"?"Present":s.status==="A"?"Absent":"Late"
+        status: s.status==="P"?"Present":s.status==="A"?"Absent":"Leave"
       }));
       // Use bulk endpoint for better performance (1 request instead of N)
       await api.post("/attendance/mark-bulk", { records, date });
@@ -97,69 +118,16 @@ function TeacherAttendance() {
         <div style={{ display:"flex", gap:28, marginBottom:20, alignItems:"center" }}>
           <span style={{ color:C.teal, fontWeight:700, fontSize:14 }}>Present: {present}</span>
           <span style={{ color:C.red, fontWeight:700, fontSize:14 }}>Absent: {absent}</span>
-          <span style={{ color:C.orange, fontWeight:700, fontSize:14 }}>Late: {late}</span>
+          <span style={{ color:C.orange, fontWeight:700, fontSize:14 }}>Leave: {leave}</span>
           <span style={{ color:C.muted, fontWeight:600, fontSize:14 }}>Total: {att.length}</span>
 
           {/* Month filter and Save button */}
-          <div style={{ marginLeft:"auto", display:"flex", gap:10, alignItems:"center" }}>
-            {dateRange && (
-              <span style={{ fontSize: 13, color: C.muted, fontWeight: 600 }}>
-                Filtered: <span style={{color: C.dark}}>{dateRange.label}</span>
-              </span>
-            )}
-            <div style={{ position: 'relative' }}>
-              <motion.button
-                type="button"
-                whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
-                onClick={() => setShowMonthPicker(!showMonthPicker)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: C.light,
-                  color: C.dark,
-                  border: '1px solid ' + C.border,
-                  borderRadius: 10,
-                  padding: '8px 14px',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 600
-                }}>
-                <Calendar size={15} /> Filter
-              </motion.button>
-              <AnimatePresence>
-                {showMonthPicker && (
-                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 1000 }}>
-                    <MonthPicker
-                      onSelect={(range) => {
-                        setDateRange(range);
-                        setShowMonthPicker(false);
-                      }}
-                      onClose={() => setShowMonthPicker(false)}
-                    />
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Save button */}
-            <motion.button type="button"
-              whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
-              onClick={handleSave}
-              style={{
-                display:"flex", alignItems:"center", gap:6,
-                background: saved ? C.teal : C.accent,
-                color:"#fff", border:"none", borderRadius:10,
-                padding:"9px 20px", cursor:"pointer",
-                fontSize:13, fontWeight:600,
-                transition:"background .2s"
-              }}>
-              {saved ? (
-                <><Check size={15} /> Saved!</>
-              ) : (
-                <><Check size={15} /> Save</>
-              )}
-            </motion.button>
+          <div style={{ marginLeft:"auto", display:"flex", gap:10, alignItems:"center", flexWrap:"wrap", justifyContent:"flex-end" }}>
+            <select value={selectedStudentId} onChange={e=>setSelectedStudentId(e.target.value)} style={{ maxWidth:190, padding:"8px 10px", border:"1px solid "+C.border, borderRadius:10, fontSize:13 }}>
+              <option value="">All students</option>
+              {att.map(student=><option key={student.studentId} value={student.studentId}>{student.name} · {student.roll}</option>)}
+            </select>
+            <input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} style={{ padding:"8px 10px", border:"1px solid "+C.border, borderRadius:10, fontSize:13 }} />
           </div>
         </div>
 
@@ -175,7 +143,7 @@ function TeacherAttendance() {
               }}>
               <Check size={16} color={C.teal} />
               <span style={{ fontSize:13, fontWeight:600, color:C.teal }}>
-                Attendance saved successfully! {present} Present · {absent} Absent · {late} Late
+                Attendance saved successfully! {present} Present · {absent} Absent · {leave} Leave
               </span>
             </motion.div>
           )}
@@ -214,7 +182,7 @@ function TeacherAttendance() {
                           background:s.status===opt.label ? opt.color : "#f0f0f0",
                           color:s.status===opt.label ? "#fff" : C.muted,
                           transition:"all .15s"
-                        }}>
+                        }} aria-pressed={s.status===opt.label}>
                         {opt.label}
                       </motion.button>
                     ))}
@@ -222,11 +190,11 @@ function TeacherAttendance() {
                 </td>
                 <td data-label="Status" style={{ padding:"14px 14px" }}>
                   <span style={{
-                    background: s.status==="P" ? "#d1fae5" : s.status==="A" ? "#fee2e2" : "#fef3c7",
-                    color: s.status==="P" ? C.teal : s.status==="A" ? C.red : C.orange,
+                    background: s.status==="P" ? "#d1fae5" : s.status==="A" ? "#fee2e2" : s.status==="L" ? "#fef3c7" : "#f3f4f6",
+                    color: s.status==="P" ? C.teal : s.status==="A" ? C.red : s.status==="L" ? C.orange : C.muted,
                     borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600
                   }}>
-                    {s.status==="P" ? "Present" : s.status==="A" ? "Absent" : "Late"}
+                    {s.status==="P" ? "Present" : s.status==="A" ? "Absent" : s.status==="L" ? "Leave" : "Not marked"}
                   </span>
                 </td>
               </tr>
@@ -234,6 +202,22 @@ function TeacherAttendance() {
           </tbody>
         </table>
         </div>
+
+        {selectedStudentId && (
+          <div style={{ marginTop:18, padding:14, border: "1px solid "+C.border, borderRadius:10, overflowX:"auto" }}>
+            <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Attendance history by date</div>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {[...studentHistory].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(record=>{
+                const statusColor = record.status === "Present" ? C.teal : record.status === "Absent" ? C.red : C.orange;
+                return <button type="button" key={record._id} onClick={()=>setSelectedDate(new Date(record.date).toISOString().slice(0,10))} style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 9px", border:"1px solid "+C.border, borderRadius:8, background:C.white, cursor:"pointer", fontSize:12 }}>
+                  <span style={{ width:8, height:8, borderRadius:"50%", background:statusColor }} />
+                  {new Date(record.date).toLocaleDateString()} · {record.status}
+                </button>;
+              })}
+              {!studentHistory.length && <span style={{ color:C.muted, fontSize:12 }}>No recorded attendance for this student.</span>}
+            </div>
+          </div>
+        )}
 
         {/* Bottom Save button */}
         <div style={{ marginTop:20, display:"flex", justifyContent:"flex-end" }}>

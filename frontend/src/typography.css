@@ -1,0 +1,49 @@
+/* ===== Global typography: sharp and clean ===== */
+:root {
+  --font-sans: "Inter Variable", "Inter", Roboto, "Segoe UI", system-ui, Arial, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Stops phones from zooming the page when you tap an input */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ===== Mobile top bar: give the page title room ===== */
+@media (max-width: 768px) {
+  .pca-topbar-clock {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .pca-topbar-account-text {
+    display: none !important;
+  }
+}

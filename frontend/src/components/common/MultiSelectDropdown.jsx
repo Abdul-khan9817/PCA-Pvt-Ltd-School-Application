@@ -3,30 +3,7 @@ import { ChevronDown, Search, X, Check } from "../../shared/ui";
 import { C } from "../../shared/runtime";
 import { Portal } from "./Portal";
 
-/**
- * MultiSelectDropdown
- * Searchable, checkbox-driven multi-select. Matches the app's inline-style
- * token system (C.accent, C.border, C.muted, C.text).
- *
- * Perf/robustness choices:
- *  - Panel renders in a Portal (position: fixed, computed from the trigger's
- *    bounding rect) so it never gets clipped by a scrollable modal and is
- *    never subject to parent overflow/z-index issues.
- *  - Filtering runs on the options array passed in; memoize that array where
- *    you build it (see options={useMemo(...)} in the usage below) so a
- *    parent re-render doesn't rebuild 500 objects every keystroke.
- *  - Wrapped in React.memo: re-renders only when its own props change.
- *  - Escape closes, click-outside closes, repositions on scroll/resize.
- *
- * Props:
- *  - label:       string
- *  - options:     Array<{ id: string, label: string, meta?: string }>
- *  - selectedIds: Array<string>          (controlled)
- *  - onChange:    (ids: Array<string>) => void
- *  - placeholder: string
- *  - loading:     boolean
- *  - emptyText:   string
- */
+
 function MultiSelectDropdownInner({
   label,
   options = [],

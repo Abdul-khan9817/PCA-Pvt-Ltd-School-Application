@@ -32,10 +32,12 @@ export async function list(req, res) {
     const kids = await Student.find({ guardianIds: req.user._id }).select('_id');
     q.student = { $in: kids.map(x => x._id) };
   }
-  if (req.user.role === 'teacher') {
+  if (['teacher', 'principal', 'vice_principal'].includes(req.user.role)) {
     const access = await getTeacherAccess(req.user._id, req.user.role);
     q.classId = { $in: access.classIds };
-    if (access.subjectIds.length) q.subjectId = { $in: access.subjectIds };
+    if (access.subjectIds.length) {
+      q.subjectId = { $in: access.subjectIds };
+    }
   }
 
   const data = await Attendance.find(q)
@@ -59,7 +61,7 @@ export async function mark(req, res) {
       return res.status(403).json({ success: false, message: 'You are not assigned to this class' });
     }
     if (
-      req.user.role === 'teacher' &&
+      ['teacher', 'principal', 'vice_principal'].includes(req.user.role) &&
       subjectId &&
       access.subjectIds.length &&
       !access.subjectIds.some(id => String(id) === String(subjectId))
@@ -106,9 +108,15 @@ export async function markBulk(req, res) {
     }
   }
 
+  const roleAccess = ['teacher', 'principal', 'vice_principal'].includes(req.user.role)
+    ? await getTeacherAccess(req.user._id, req.user.role)
+    : null;
   const results = [];
   for (const r of records) {
     if (!r.student || !r.status) continue;
+    if (roleAccess && !roleAccess.classIds.some(id => String(id) === String(r.classId || classId))) {
+      return res.status(403).json({ success: false, message: 'You are not assigned to this class' });
+    }
     const d = await Attendance.findOneAndUpdate(
       { student: r.student, date: new Date(date), subjectId: r.subjectId || null },
       {

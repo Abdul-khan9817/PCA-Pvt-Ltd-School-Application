@@ -32,6 +32,10 @@
   [style*="gap: 20"]     { gap: 16px !important; }
 
   /* Tables: horizontal scroll instead of wrapping/overflowing */
+  .edumanage-topbar-left,
+  .edumanage-topbar-right,
+  .edumanage-topbar-tools{flex-wrap:nowrap!important}
+  .edumanage-topbar-subtitle{display:none!important}
   table {
     display: block;
     overflow-x: auto;
@@ -164,16 +168,155 @@
   .edumanage-topbar-right { gap: 12px !important; }
 }
 @media (max-width: 768px) {
-  /* Clock takes real estate that's needed for the bell + account on phones */
-  .edumanage-topbar-clock { display: none !important; }
+  .edumanage-topbar-clock { min-width: 92px; }
+  .edumanage-topbar-account-text { min-width: 0; max-width: clamp(72px, 22vw, 150px); }
+  .edumanage-topbar-chevron { display: flex; flex-shrink: 0; }
 }
-@media (max-width: 480px) {
-  .edumanage-topbar { padding: 0 10px !important; }
-  .edumanage-topbar-right { gap: 8px !important; }
-  /* Name + role text crowds the bell against the avatar on narrow phones —
-     collapse the account button down to avatar + chevron only */
-  .edumanage-topbar-account-text { display: none !important; }
+
+/* ── Topbar (mobile): ROW layout ─────────────────────────────────────────────
+   LEFT : menu icon and page title ("Dashboard") side by side (unchanged)
+   RIGHT: bell, then avatar (vertically centered), then the role on its right.
+          The user's name sits under the avatar (positioned in Topbar.jsx).
+   All of this is CSS-only; Topbar.jsx just provides the class names. ── */
+@media (max-width: 768px) {
+  .edumanage-topbar { padding: 6px 12px !important; }
+
+  /* left block: menu icon and title stay SIDE BY SIDE (original row layout) */
+
+  /* right block: avatar and role in ONE row, vertically centered */
+  .edumanage-topbar-account {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: center;
+    gap: 8px !important;
+    padding: 4px !important;
+  }
+  .edumanage-topbar-account-text {
+    display: block;
+    text-align: center;
+    line-height: 1.15;
+    max-width: clamp(60px, 20vw, 100px);
+  }
+  .edumanage-topbar-account-text > div:first-child { font-size: 10px !important; }
+  .edumanage-topbar-account-text > div:last-child  { font-size: 8px !important; text-transform: capitalize; }
+
+  /* chevron is hidden to save width; tapping the avatar/name still opens the menu */
   .edumanage-topbar-chevron { display: none !important; }
+}
+
+@media (max-width: 480px) {
+  .edumanage-topbar { padding: 6px 10px !important; }
+  .edumanage-topbar-left { max-width: none !important; flex: 1 1 auto !important; }
+  .edumanage-topbar-right { max-width: none !important; flex: 0 1 auto; gap: 5px !important; }
+  .edumanage-topbar-tools { gap: 5px !important; }
+  .edumanage-topbar-clock { min-width: 0; }
+  .edumanage-topbar-clock > div:first-child { font-size: 10px !important; }
+  .edumanage-topbar-clock > div:last-child { font-size: 8px !important; }
+  .edumanage-topbar-account-text { max-width: clamp(52px, 18vw, 86px); }
+}
+
+/* ── Staff Attendance (mobile): Present / Absent / Leave in ONE row ─────────
+   The "STATUS" label sits above the buttons, and the three buttons share the
+   full card width equally instead of wrapping onto a second line. ── */
+@media (max-width: 768px) {
+  table.rtable td.staff-att-status-cell {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    text-align: left;
+  }
+  .staff-att-status.staff-att-status {
+    flex-wrap: nowrap !important;
+    width: 100%;
+    gap: 6px !important;
+  }
+  .staff-att-status-btn.staff-att-status-btn {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    padding: 8px 4px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
+}
+
+/* ── Teacher Students (mobile) ───────────────────────────────────────────────
+   1. Search icon + input stay on ONE line (the global "flex + gap → wrap" rule
+      was pushing the input under the icon).
+   2. Card header (avatar / name / status pill) never wraps.
+   3. Roll No / Class / Gender / Phone show as label-left, value-right rows. ── */
+@media (max-width: 768px) {
+  .teacher-students-search.teacher-students-search {
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    flex: 1 1 100% !important;
+  }
+  .teacher-students-search input { flex: 1 1 auto; min-width: 0; }
+  .teacher-students-search svg { flex-shrink: 0; }
+
+  .teacher-students-card-head.teacher-students-card-head {
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+
+  /* details: label on the left, value on the right (like the salary card) */
+  .teacher-students-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+  }
+  .teacher-students-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 2px;
+  }
+  .teacher-students-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: #4b5563;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .teacher-students-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1f2937;
+    text-align: right;
+    min-width: 0;
+    word-break: break-word;
+  }
+}
+
+/* ── Salary payslip actions (mobile): View + PDF side by side ────────────────
+   The generic .rtable-actions rule stacks every button full width. For the
+   payslip cell we want two equal buttons in ONE row, centered, easy to tap. ── */
+@media (max-width: 768px) {
+  table.rtable td.rtable-actions .teacher-salary-actions {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    width: 100%;
+  }
+  table.rtable td.rtable-actions .teacher-salary-btn {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 40px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 9px 10px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+  }
+  table.rtable td.rtable-actions .teacher-salary-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
 }
 
 /* ── Calendar / month picker: keep the 7-column day grid intact ─────────────

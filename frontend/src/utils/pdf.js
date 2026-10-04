@@ -203,7 +203,7 @@ export class PDFDoc {
     const p2 = (n) => String(n).padStart(2, "0");
     const stamp = `D:${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}`;
     const infoId = add(
-      `<< /Title ${pdfString(this.title)} /Author ${pdfString(this.author)} /Producer ${pdfString("EduManage")} /CreationDate (${stamp}) >>`
+      `<< /Title ${pdfString(this.title)} /Author ${pdfString(this.author)} /Producer ${pdfString("PCA Pvt. Ltd")} /CreationDate (${stamp}) >>`
     );
 
     // Reserve ids first so bookmarks / links can point at pages that come later.

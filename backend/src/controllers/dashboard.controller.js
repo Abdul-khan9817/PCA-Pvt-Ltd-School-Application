@@ -15,7 +15,7 @@ import { resolveTeacherClassIds } from '../services/teacherAccess.service.js';
 export async function stats(req, res) {
   const role = req.user.role;
 
-  if (['admin', 'principal', 'vice_principal'].includes(role)) {
+  if (role === 'admin') {
     const [
       users,
       students,
@@ -126,20 +126,27 @@ export async function stats(req, res) {
     });
   }
 
-  if (role === 'teacher') {
+  if (['teacher', 'principal', 'vice_principal'].includes(role)) {
     const staff = await Staff.findOne({ user: req.user._id });
     const classIds = await resolveTeacherClassIds(req.user._id);
 
-    const [classes, students, assignments, attendance, classStudentCounts] = await Promise.all([
+    const [classes, students, assignments, attendanceTotal, attendancePresent, classStudentCounts] = await Promise.all([
       Class.countDocuments({ _id: { $in: classIds } }),
       Student.countDocuments({ classId: { $in: classIds }, status: 'active' }),
       Assignment.countDocuments({ teacher: req.user._id }),
+      Attendance.countDocuments({ classId: { $in: classIds } }),
       Attendance.countDocuments({ classId: { $in: classIds }, status: 'Present' }),
       Student.aggregate([
         { $match: { classId: { $in: classIds }, status: 'active' } },
         { $group: { _id: '$classId', count: { $sum: 1 } } }
       ])
     ]);
+
+    const attendance = {
+      total: attendanceTotal,
+      present: attendancePresent,
+      percentage: attendanceTotal ? Math.round((attendancePresent / attendanceTotal) * 100) : 0,
+    };
 
     return res.json({
       success: true,

@@ -12,7 +12,7 @@ import Payroll from '../models/Payroll.js';
 import Leave from '../models/Leave.js';
 import Timetable from '../models/Timetable.js';
 import Announcement from '../models/Announcement.js';
-import { resolveTeacherClassIds, resolveClassTeacherIds } from '../services/teacherAccess.service.js';
+import { getTeacherAccess, resolveTeacherClassIds, resolveClassTeacherIds } from '../services/teacherAccess.service.js';
 
 const roleMap={
 	admin:['admin'],
@@ -38,9 +38,9 @@ const roleMap={
  * source-of-truth relations makes that class of bug impossible.
  */
 async function studentScope(req,q){
-	if(req.user.role==='teacher'){
-		const classIds=await resolveTeacherClassIds(req.user._id);
-		q.classId={$in:classIds};
+	if(['teacher','principal','vice_principal'].includes(req.user.role)){
+		const access=await getTeacherAccess(req.user._id, req.user.role);
+		q.classId={$in:access.classIds};
 	}
 
 	if(req.user.role==='student'){
@@ -55,20 +55,23 @@ async function studentScope(req,q){
 }
 
 async function classScope(req,q){
-	if(req.user.role==='teacher'){
-		const classIds=await resolveTeacherClassIds(req.user._id);
-		q._id={$in:classIds};
+	if(['teacher','principal','vice_principal'].includes(req.user.role)){
+		const access=await getTeacherAccess(req.user._id, req.user.role);
+		q._id={$in:access.classIds};
 	}
 }
 
 async function subjectScope(req,q){
-	if(req.user.role==='teacher'){
+	if(['teacher','principal','vice_principal'].includes(req.user.role)){
+		const access=await getTeacherAccess(req.user._id, req.user.role);
 		// Class teachers see subjects for the classes they are CURRENTLY the
 		// class teacher of; subject teachers see subjects they are CURRENTLY
 		// listed on directly. Both computed live — see resolveTeacherClassIds.
-		const classIds=await resolveClassTeacherIds(req.user._id);
+		const classIds=req.user.role==='teacher'
+			?await resolveClassTeacherIds(req.user._id)
+			:access.classIds;
 		q.$or=[
-			{teacherIds:req.user._id},
+			{_id:{$in:access.subjectIds}},
 			...(classIds.length?[{classIds:{$in:classIds}}]:[])
 		];
 	}
@@ -80,8 +83,11 @@ async function timetableScope(req,q){
 		q.classId=student?.classId||null;
 	}
 
-	if(req.user.role==='teacher'){
-		const classIds=await resolveTeacherClassIds(req.user._id);
+	if(['teacher','principal','vice_principal'].includes(req.user.role)){
+		const access=await getTeacherAccess(req.user._id, req.user.role);
+		const classIds=req.user.role==='teacher'
+			?await resolveTeacherClassIds(req.user._id)
+			:access.classIds;
 		q.$or=[
 			{classId:{$in:classIds}},
 			{teacher:req.user._id}

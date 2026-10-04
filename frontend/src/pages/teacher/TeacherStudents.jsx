@@ -29,6 +29,7 @@ const StatusPill = ({ status }) => {
 };
 
 // Read-only list of the students in the teacher's classes.
+// Mobile layout fixes live in responsive.css (.teacher-students-*).
 function TeacherStudents() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -69,9 +70,9 @@ function TeacherStudents() {
   });
 
   const toolbar = (
-    <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
-      <div style={{ flex: "1 1 220px", display: "flex", alignItems: "center", gap: 8, background: "#f4f6fb", borderRadius: 10, padding: "8px 14px", minWidth: 0 }}>
-        <Search size={15} color={C.muted} />
+    <div className="teacher-students-toolbar" style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+      <div className="teacher-students-search" style={{ flex: "1 1 220px", display: "flex", alignItems: "center", gap: 8, background: "#f4f6fb", borderRadius: 10, padding: "8px 14px", minWidth: 0 }}>
+        <Search size={15} color={C.muted} style={{ flexShrink: 0 }} />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or roll no..."
           style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, width: "100%", minWidth: 0 }} />
       </div>
@@ -120,8 +121,8 @@ function TeacherStudents() {
   const renderCards = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {visible.map((s, i) => (
-        <div key={s.id} style={{ background: ROW_COLORS[i % ROW_COLORS.length], border: "1px solid " + C.border, borderRadius: 12, padding: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        <div key={s.id} className="teacher-students-card" style={{ background: ROW_COLORS[i % ROW_COLORS.length], border: "1px solid " + C.border, borderRadius: 12, padding: 12 }}>
+          <div className="teacher-students-card-head" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <Avatar name={s.name} size={38} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 14, wordBreak: "break-word" }}>{s.name}</div>
@@ -129,11 +130,11 @@ function TeacherStudents() {
             </div>
             <StatusPill status={s.status} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12 }}>
-            <div><div style={{ color: C.muted, fontSize: 10 }}>ROLL NO</div><div style={{ fontWeight: 600 }}>{s.roll}</div></div>
-            <div><div style={{ color: C.muted, fontSize: 10 }}>CLASS</div><div style={{ fontWeight: 600 }}>{s.cls}</div></div>
-            <div><div style={{ color: C.muted, fontSize: 10 }}>GENDER</div><div style={{ fontWeight: 600 }}>{s.gender}</div></div>
-            <div><div style={{ color: C.muted, fontSize: 10 }}>PHONE</div><div style={{ fontWeight: 600 }}>{s.phone || "—"}</div></div>
+          <div className="teacher-students-details">
+            <div className="teacher-students-row"><span className="teacher-students-label">ROLL NO</span><span className="teacher-students-value">{s.roll}</span></div>
+            <div className="teacher-students-row"><span className="teacher-students-label">CLASS</span><span className="teacher-students-value">{s.cls}</span></div>
+            <div className="teacher-students-row"><span className="teacher-students-label">GENDER</span><span className="teacher-students-value">{s.gender}</span></div>
+            <div className="teacher-students-row"><span className="teacher-students-label">PHONE</span><span className="teacher-students-value">{s.phone || "—"}</span></div>
           </div>
         </div>
       ))}

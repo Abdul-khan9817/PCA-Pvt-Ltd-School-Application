@@ -27,7 +27,7 @@ function TeacherDashboard() {
           { label: "My Classes", val: String(d.classes || 0), change: "Active", up: true, color: C.accent, icon: "BookOpen" },
           { label: "Total Students", val: String(d.students || 0), change: "Enrolled", up: true, color: C.teal, icon: "GraduationCap" },
           { label: "Assignments", val: String(d.assignments || 0), change: "Active", up: true, color: C.orange, icon: "CheckSquare" },
-          { label: "Avg Attendance", val: `${d.attendance && d.students ? Math.min(100, Math.round((d.attendance / (d.students * 3)) * 100)) : 0}%`, change: d.attendance ? "Recorded" : "No records", up: true, color: C.purple, icon: "ClipboardCheck" },
+          { label: "Avg Attendance", val: `${typeof d.attendance === "object" ? d.attendance.percentage || 0 : d.attendance && d.students ? Math.min(100, Math.round((d.attendance / (d.students * 3)) * 100)) : 0}%`, change: typeof d.attendance === "object" ? (d.attendance.total ? "Recorded" : "No records") : d.attendance ? "Recorded" : "No records", up: true, color: C.purple, icon: "ClipboardCheck" },
         ]);
       }
     }).catch(() => {});
@@ -54,7 +54,7 @@ function TeacherDashboard() {
 
   return (
     <div style={{ padding:28, display:"flex", flexDirection:"column", gap:24 }}>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gridAutoRows:"1fr", alignItems:"stretch", gap:16 }}>
         {stats.map(s=><StatCard key={s.label} stat={s} />)}
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>

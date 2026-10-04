@@ -888,20 +888,16 @@ export function AdminTimetable() {
   };
 
   /*
-   * MOBILE: school days as tabs in ONE row (Mon–Fri, plus Sat only if used).
-   * Tap a day to see only that day's periods — no scrolling through every day.
-   * Opens on today (if it is a school day), otherwise Monday.
+   * MOBILE: a DAY DROPDOWN (Mon–Fri, plus Sat only if used) instead of a row of
+   * day buttons. Choose a day to see only that day's periods.
+   * Monday is ALWAYS the default (first) day, including after changing class.
    */
   const renderVertical = () => {
-    // Saturday tab appears only when some entry is scheduled on Saturday.
+    // Saturday option appears only when some entry is scheduled on Saturday.
+    // visibleDays always starts with Monday, so Monday is the default.
     const tabDays = visibleDays;
-    const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
-    const selectedDay = tabDays.includes(activeDay)
-      ? activeDay
-      : tabDays.includes(todayName)
-      ? todayName
-      : tabDays[0];
+    const selectedDay = tabDays.includes(activeDay) ? activeDay : tabDays[0];
 
     const theme = dayThemes[selectedDay];
 
@@ -911,44 +907,41 @@ export function AdminTimetable() {
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%", maxWidth: "100%", minWidth: 0 }}>
-        {/* Day tabs: always one row */}
-        <div
-          role="tablist"
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${tabDays.length}, minmax(0, 1fr))`,
-            gap: 4,
-            width: "100%",
-          }}
-        >
-          {tabDays.map(day => {
-            const dayTheme = dayThemes[day];
-            const on = day === selectedDay;
-
-            return (
-              <button
-                key={day}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => setActiveDay(day)}
-                style={{
-                  minWidth: 0,
-                  padding: "10px 0",
-                  border: `2px solid ${dayTheme.header}`,
-                  borderRadius: 10,
-                  background: on ? dayTheme.header : dayTheme.bg,
-                  color: on ? C.white : dayTheme.accent,
-                  fontSize: 12,
-                  fontWeight: 800,
-                  whiteSpace: "nowrap",
-                  cursor: "pointer",
-                }}
-              >
-                {day.slice(0, 3)}
-              </button>
-            );
-          })}
+        {/* Day dropdown */}
+        <div style={{ width: "100%", minWidth: 0 }}>
+          <select
+            aria-label="Select day"
+            value={selectedDay}
+            onChange={event => setActiveDay(event.target.value)}
+            style={{
+              display: "block",
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "12px 42px 12px 14px",
+              border: `2px solid ${theme.header}`,
+              borderRadius: 10,
+              backgroundColor: theme.bg,
+              color: theme.accent,
+              fontSize: 14,
+              fontWeight: 800,
+              lineHeight: 1.2,
+              cursor: "pointer",
+              outline: "none",
+              WebkitAppearance: "none",
+              appearance: "none",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 14px center",
+              backgroundSize: "14px",
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+            }}
+          >
+            {tabDays.map(day => (
+              <option key={day} value={day}>
+                {day}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Selected day */}
@@ -1111,7 +1104,10 @@ export function AdminTimetable() {
 
             <select
               value={classId}
-              onChange={event => setClassId(event.target.value)}
+              onChange={event => {
+                setClassId(event.target.value);
+                setActiveDay(""); // back to Monday when the class changes
+              }}
               style={{
                 padding: "10px 12px",
                 flex: "1 1 auto",

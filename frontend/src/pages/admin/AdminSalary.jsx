@@ -284,7 +284,7 @@ function AdminSalary() {
 .sal-hist-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 .sal-hist-stats > * { flex: 1 1 120px; min-width: 0; }
 
-/* Stat cards — always 3 in one row */
+/* Stat cards — 3 in one row on desktop, ONE PER ROW on mobile (see max-width: 768px) */
 .sal-stat { position: relative; overflow: hidden; border-radius: 18px; padding: 26px 28px; color: #fff;
   display: flex; align-items: center; gap: 18px; min-width: 0; box-sizing: border-box; }
 .sal-stat::after { content: ""; position: absolute; top: -40px; right: -30px; width: 130px; height: 130px;
@@ -321,7 +321,15 @@ function AdminSalary() {
   .sal-card { padding: 14px !important; border-radius: 12px !important; }
   .sal-tabs { margin-bottom: 14px; }
   .sal-tabs > button { flex: 1 1 0; padding: 9px 12px !important; }
-  .sal-stats { gap: 10px; margin-bottom: 14px; }
+
+  /* Summary cards: ONE per row (also for the vice-principal's 2-card view) */
+  .sal-stats, .sal-stats.sal-stats-2 { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 14px; }
+  .sal-stat { padding: 16px 18px; gap: 14px; border-radius: 16px; }
+  .sal-stat-icon { width: 44px; height: 44px; border-radius: 12px; }
+  .sal-stat-icon svg { width: 22px; height: 22px; }
+  .sal-stat-value { font-size: 28px; }
+  .sal-stat-label { font-size: 14px; }
+
   .sal-add-wrap { margin-left: 0; width: 100%; }
   .sal-add-wrap > button { width: 100%; justify-content: center; }
 
@@ -334,21 +342,9 @@ function AdminSalary() {
   .sal-cards td.rtable-actions > div.sal-leave-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (max-width: 640px) {
-  .sal-stat { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 10px; border-radius: 14px; }
-  .sal-stat-icon { width: 32px; height: 32px; border-radius: 10px; }
-  .sal-stat-icon svg { width: 16px; height: 16px; }
-  .sal-stat-value { font-size: 20px; }
-  .sal-stat-label { font-size: 11.5px; line-height: 1.25; }
-}
 @media (max-width: 480px) {
   .sal-grid3 { grid-template-columns: 1fr; }
   .sal-grid2 { grid-template-columns: 1fr; }
-}
-@media (max-width: 340px) {
-  .sal-stat { padding: 10px 8px; }
-  .sal-stat-value { font-size: 17px; }
-  .sal-stat-label { font-size: 10.5px; }
 }
 `}</style>
       {error&&!showAdd&&!editModal&&<div style={{color:C.red,fontSize:13,marginBottom:12}}>{error}</div>}
@@ -367,7 +363,7 @@ function AdminSalary() {
         </div>
       )}
 
-      {/* Summary cards — always one row */}
+      {/* Summary cards — 3 per row on desktop, one per row on mobile */}
       <div className={`sal-stats${isVP ? " sal-stats-2" : ""}`}>
         {[
           { label:"Total Paid",     value:`₹${(totalPaid/1000).toFixed(0)}K`,    icon:Check,       gradient:"linear-gradient(135deg, rgb(39, 174, 179), rgb(13, 148, 136))" },

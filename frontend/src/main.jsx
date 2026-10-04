@@ -1,8 +1,10 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import '@fontsource-variable/inter';
 import App from './App.jsx';
 import './styles.css';
 import './responsive.css';
+import './typography.css';
 
 // Global Enter → next field navigation (entire project)
 // When Enter is pressed inside any text-like input, move focus to the next

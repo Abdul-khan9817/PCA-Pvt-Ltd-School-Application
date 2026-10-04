@@ -40,7 +40,7 @@ function wrap(content) { return <div className="edumanage-page"><Suspense fallba
 
 // ✅ Now accepts handlers as third argument
 function renderPage(page, role, { onLogout, setPage, userData } = {}) {
-  if (["admin", "principal", "vice_principal"].includes(role)) {
+  if (role === "admin") {
     switch (page) {
       case "dashboard":     return wrap(<AdminDashboard onLogout={onLogout} setPage={setPage} userData={userData} />);
       case "classes":       return wrap(<AdminClasses onLogout={onLogout} setPage={setPage} userData={userData} />);
@@ -59,7 +59,7 @@ function renderPage(page, role, { onLogout, setPage, userData } = {}) {
       default:              return wrap(<AdminDashboard onLogout={onLogout} setPage={setPage} userData={userData} />);
     }
   }
-  if (role === "teacher") {
+  if (["principal", "vice_principal", "teacher"].includes(role)) {
     switch (page) {
       case "dashboard":     return wrap(<TeacherDashboard onLogout={onLogout} setPage={setPage} userData={userData} />);
       case "classes":       return wrap(<TeacherClasses onLogout={onLogout} setPage={setPage} userData={userData} />);

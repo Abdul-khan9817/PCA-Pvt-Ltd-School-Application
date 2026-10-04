@@ -6,32 +6,83 @@ import { C, initials, avatarColors, avatarColor } from "../../shared/runtime";
 
 import { onSocketEvent, onResourceChange } from "../../services/socket.service";
 
-const INIT_MESSAGES = [
-  { id:1, from:"Dr. Sarah Johnson", role:"Admin", avatar:"DS", text:"Sports Day schedule has been updated. Please check the notice board.", time:"9:32 AM", unread:true },
-  { id:2, from:"Mr. Raj Kumar", role:"Teacher", avatar:"RK", text:"Please submit your assignment by Friday.", time:"8:15 AM", unread:true },
-  { id:3, from:"System", role:"System", avatar:"SY", text:"Your attendance for December has been marked.", time:"Yesterday", unread:false },
-  { id:4, from:"Ms. Priya Singh", role:"Teacher", avatar:"PS", text:"Parent-teacher meeting is scheduled for Saturday 10 AM.", time:"Yesterday", unread:false },
-];
+const timeAgo = (date) => {
+  const t = new Date(date).getTime();
+  if (!t) return "";
+  const s = Math.floor((Date.now() - t) / 1000);
+  if (s < 60) return "Just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} hour${h > 1 ? "s" : ""} ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d} day${d > 1 ? "s" : ""} ago`;
+  return new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+};
+
+const typeStyle = (type) => {
+  switch ((type || "").toLowerCase()) {
+    case "announcement": return { icon:"📢", color:"#eef2ff", dot:C.accent };
+    case "attendance":   return { icon:"✅", color:"#d1fae5", dot:C.teal };
+    case "salary":       return { icon:"💰", color:"#fef3c7", dot:C.orange };
+    case "fees":
+    case "fee":          return { icon:"💳", color:"#fef3c7", dot:C.orange };
+    case "grade":
+    case "marks":        return { icon:"📝", color:"#ede9fe", dot:C.accent };
+    default:             return { icon:"🔔", color:"#f1f5f9", dot:C.accent };
+  }
+};
+
+const fmtTime = (d) => new Date(d || Date.now()).toLocaleTimeString("en-US", { hour:"2-digit", minute:"2-digit" });
 
 function NotificationPanel({ userData }) {
   const [open, setOpen]     = useState(false);
   const [tab, setTab]       = useState("notifications"); // "notifications" | "messages"
-  const [messages, setMessages]   = useState(INIT_MESSAGES);
+  const [messages, setMessages]   = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [input, setInput]   = useState("");
-  const [chats, setChats]   = useState({
-    1: [{ id:1, from:"Dr. Sarah Johnson", text:"Sports Day schedule has been updated. Please check the notice board.", time:"9:32 AM", mine:false }],
-    2: [{ id:1, from:"Mr. Raj Kumar", text:"Please submit your assignment by Friday.", time:"8:15 AM", mine:false }],
-    3: [{ id:1, from:"System", text:"Your attendance for December has been marked.", time:"Yesterday", mine:false }],
-    4: [{ id:1, from:"Ms. Priya Singh", text:"Parent-teacher meeting is scheduled for Saturday 10 AM.", time:"Yesterday", mine:false }],
-  });
+  const [chats, setChats]   = useState({});
+  const [notifications, setNotifications] = useState([]);
+  const [, setTick] = useState(0); // re-render every minute so "x min ago" stays fresh
   const panelRef = useRef(null);
   const chatEndRef = useRef(null);
 
-  const [notifications,setNotifications]=useState([]);
-  useEffect(()=>{
-    api.get("/notifications").then(r=>setNotifications(r.data||[])).catch(()=>{});
-    api.get("/messages/inbox").then(r=>setMessages((r.data||[]).map((m,i)=>({id:m._id,from:m.from?.name||"User",fromId:m.from?._id,role:m.from?.role||"",avatar:initials(m.from?.name||"U"),text:m.text,time:new Date(m.createdAt).toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"}),unread:false})))).catch(()=>{});
+  const chatKey = (m) => m?.fromId || m?.id;
+
+  useEffect(() => {
+    const iv = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(iv);
+  }, []);
+
+  useEffect(() => {
+    api.get("/notifications")
+      .then(r => setNotifications(r.data || []))
+      .catch(() => {});
+
+    api.get("/messages/inbox")
+      .then(r => {
+        const list = (r.data || []).map(m => ({
+          id: m._id,
+          from: m.from?.name || "User",
+          fromId: m.from?._id,
+          role: m.from?.role || "",
+          avatar: initials(m.from?.name || "U"),
+          text: m.text,
+          time: fmtTime(m.createdAt),
+          unread: false,
+        }));
+        setMessages(list);
+        setChats(prev => {
+          const next = { ...prev };
+          list.slice().reverse().forEach(m => {
+            const k = chatKey(m);
+            const arr = next[k] || [];
+            if (!arr.some(x => x.id === m.id)) next[k] = [...arr, { ...m, mine:false }];
+          });
+          return next;
+        });
+      })
+      .catch(() => {});
 
     const unsubMsg = onSocketEvent("message:new", (newMsg) => {
       const formatted = {
@@ -41,21 +92,23 @@ function NotificationPanel({ userData }) {
         role: newMsg.from?.role || "",
         avatar: initials(newMsg.from?.name || "U"),
         text: newMsg.text,
-        time: new Date(newMsg.createdAt || Date.now()).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+        time: fmtTime(newMsg.createdAt),
         unread: true,
       };
       setMessages(prev => [formatted, ...prev.filter(m => m.id !== formatted.id)]);
-      if (formatted.fromId) {
-        setChats(prev => ({
-          ...prev,
-          [formatted.fromId]: [...(prev[formatted.fromId] || []), { ...formatted, mine: false }],
-        }));
+      const k = chatKey(formatted);
+      if (k) {
+        setChats(prev => {
+          const arr = prev[k] || [];
+          if (arr.some(x => x.id === formatted.id)) return prev;
+          return { ...prev, [k]: [...arr, { ...formatted, mine:false }] };
+        });
       }
     });
 
     const unsubNotif = onResourceChange("notifications", (change) => {
       if (change.action === "create" && change.data) {
-        setNotifications(prev => [change.data, ...prev]);
+        setNotifications(prev => [change.data, ...prev.filter(n => n._id !== change.data._id)]);
       }
     });
 
@@ -63,8 +116,11 @@ function NotificationPanel({ userData }) {
       unsubMsg?.();
       unsubNotif?.();
     };
-  },[]);
-  const unreadCount = messages.filter(m => m.unread).length + notifications.filter(n=>!n.read).length;
+  }, []);
+
+  const unreadNotifs = notifications.filter(n => !n.read).length;
+  const unreadMsgs   = messages.filter(m => m.unread).length;
+  const unreadCount  = unreadNotifs + unreadMsgs;
 
   useEffect(() => {
     const h = e => { if (panelRef.current && !panelRef.current.contains(e.target)) { setOpen(false); setActiveChat(null); } };
@@ -78,19 +134,48 @@ function NotificationPanel({ userData }) {
 
   const openChat = (msg) => {
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, unread: false } : m));
+    const k = chatKey(msg);
+    setChats(prev => {
+      const arr = prev[k] || [];
+      if (arr.some(x => x.id === msg.id)) return prev;
+      return { ...prev, [k]: [...arr, { ...msg, mine:false }] };
+    });
     setActiveChat(msg);
     setTab("messages");
   };
 
-  const sendMessage = async () => { if(!input.trim()||!activeChat)return; try{const r=await api.post("/messages",{to:activeChat.fromId,text:input.trim()});const newMsg={id:r.data._id,from:userData.name,text:input.trim(),time:new Date().toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"}),mine:true};setChats(prev=>({...prev,[activeChat.id]:[...(prev[activeChat.id]||[]),newMsg]}));setInput("");}catch(e){console.error(e);} };
+  const sendMessage = async () => {
+    if (!input.trim() || !activeChat) return;
+    try {
+      const r = await api.post("/messages", { to: activeChat.fromId, text: input.trim() });
+      const newMsg = { id: r.data._id, from: userData.name, text: input.trim(), time: fmtTime(), mine: true };
+      const k = chatKey(activeChat);
+      setChats(prev => ({ ...prev, [k]: [...(prev[k] || []), newMsg] }));
+      setInput("");
+    } catch (e) { console.error(e); }
+  };
 
   const handleKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
 
-  const NOTIFS = [
-    { id:1, icon:"📢", text:"New announcement: Sports Day Event", time:"10 min ago", color:"#eef2ff", dot:C.accent },
-    { id:2, icon:"✅", text:"Attendance marked for December 2024", time:"1 hour ago", color:"#d1fae5", dot:C.teal },
-    { id:3, icon:"💰", text:"Salary for December has been processed", time:"2 hours ago", color:"#fef3c7", dot:C.orange },
-  ];
+  const markRead = async (n) => {
+    if (n.read) return;
+    setNotifications(prev => prev.map(x => x._id === n._id ? { ...x, read:true } : x));
+    try { await api.patch(`/notifications/${n._id}/read`, {}); }
+    catch (e) { setNotifications(prev => prev.map(x => x._id === n._id ? { ...x, read:false } : x)); }
+  };
+
+  const markAllRead = async () => {
+    const unread = notifications.filter(n => !n.read);
+    setNotifications(prev => prev.map(n => ({ ...n, read:true })));
+    await Promise.all(unread.map(n => api.patch(`/notifications/${n._id}/read`, {}).catch(() => null)));
+  };
+
+  const emptyBox = (icon, text) => (
+    <div style={{ padding:"40px 20px", textAlign:"center", color:C.muted }}>
+      <div style={{ fontSize:30, marginBottom:8 }}>{icon}</div>
+      <div style={{ fontSize:13 }}>{text}</div>
+    </div>
+  );
 
   return (
     <div ref={panelRef} style={{ position:"relative" }}>
@@ -108,7 +193,7 @@ function NotificationPanel({ userData }) {
               background:C.red, border:"2px solid "+C.navy,
               fontSize:9, fontWeight:700, color:"#fff",
               display:"flex", alignItems:"center", justifyContent:"center" }}>
-            {unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </motion.span>
         )}
       </motion.button>
@@ -149,17 +234,17 @@ function NotificationPanel({ userData }) {
               {/* Tabs */}
               {!activeChat && (
                 <div style={{ display:"flex", gap:6 }}>
-                  {[["notifications","🔔 Notifications"],["messages","💬 Messages"]].map(([key,label])=>(
+                  {[["notifications","🔔 Notifications", unreadNotifs],["messages","💬 Messages", unreadMsgs]].map(([key,label,count])=>(
                     <motion.button type="button" key={key} whileHover={{ scale:1.03 }} onClick={() => setTab(key)}
                       style={{ flex:1, padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
                         fontWeight:600, fontSize:12,
                         background:tab===key?"rgba(255,255,255,.25)":"rgba(255,255,255,.08)",
                         color:"#fff" }}>
                       {label}
-                      {key==="messages" && unreadCount>0 && (
+                      {count>0 && (
                         <span style={{ marginLeft:6, background:C.red, borderRadius:10,
                           padding:"1px 6px", fontSize:10 }}>
-                          {unreadCount}
+                          {count}
                         </span>
                       )}
                     </motion.button>
@@ -168,30 +253,44 @@ function NotificationPanel({ userData }) {
               )}
             </div>
 
-            {/* Content */}
+            {/* Notifications list (real data only) */}
             {!activeChat && tab === "notifications" && (
               <div style={{ maxHeight:360, overflowY:"auto" }}>
-                {NOTIFS.map((n,i) => (
-                  <motion.div key={n.id} onClick={async()=>{try{await api.patch(`/notifications/${n.id}/read`,{});setNotifications(prev=>prev.map(x=>x._id===n.id?{...x,read:true}:x));}catch(e){}}} whileHover={{ background:"#f8fafc" }}
-                    style={{ display:"flex", gap:12, padding:"14px 18px",
-                      borderBottom:i<NOTIFS.length-1?"1px solid "+C.border:"none", cursor:"pointer" }}>
-                    <div style={{ width:38, height:38, borderRadius:10, background:n.color, flexShrink:0,
-                      display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
-                      {n.icon}
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:13, color:C.text, fontWeight:500, lineHeight:1.4 }}>{n.text}</div>
-                      <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>{n.time}</div>
-                    </div>
-                    <div style={{ width:8, height:8, borderRadius:"50%", background:n.dot, flexShrink:0, marginTop:4 }} />
-                  </motion.div>
-                ))}
+                {notifications.length === 0 && emptyBox("🔔", "No notifications yet")}
+                {notifications.map((n,i) => {
+                  const st = typeStyle(n.type);
+                  const body = n.message || n.text || n.title || "";
+                  return (
+                    <motion.div key={n._id || i} onClick={() => markRead(n)} whileHover={{ background:"#f8fafc" }}
+                      style={{ display:"flex", gap:12, padding:"14px 18px",
+                        borderBottom:i<notifications.length-1?"1px solid "+C.border:"none",
+                        cursor:"pointer", background:n.read?C.white:"#fafbff" }}>
+                      <div style={{ width:38, height:38, borderRadius:10, background:st.color, flexShrink:0,
+                        display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
+                        {st.icon}
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        {n.title && n.message && (
+                          <div style={{ fontSize:13, color:C.text, fontWeight:700, lineHeight:1.4 }}>{n.title}</div>
+                        )}
+                        <div style={{ fontSize:13, color:C.text, fontWeight:n.title&&n.message?400:500, lineHeight:1.4 }}>
+                          {n.title && n.message ? n.message : body}
+                        </div>
+                        <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>{timeAgo(n.createdAt)}</div>
+                      </div>
+                      {!n.read && (
+                        <div style={{ width:8, height:8, borderRadius:"50%", background:st.dot, flexShrink:0, marginTop:4 }} />
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
 
             {/* Messages list */}
             {!activeChat && tab === "messages" && (
               <div style={{ maxHeight:360, overflowY:"auto" }}>
+                {messages.length === 0 && emptyBox("💬", "No messages yet")}
                 {messages.map((msg,i) => (
                   <motion.div key={msg.id} whileHover={{ background:"#f8fafc" }}
                     onClick={() => openChat(msg)}
@@ -224,10 +323,9 @@ function NotificationPanel({ userData }) {
             {/* Chat window */}
             {activeChat && (
               <div style={{ display:"flex", flexDirection:"column", height:380 }}>
-                {/* Chat messages */}
                 <div style={{ flex:1, overflowY:"auto", padding:"14px 16px", display:"flex", flexDirection:"column", gap:10 }}>
-                  {(chats[activeChat.id]||[]).map((msg, i) => (
-                    <div key={i} style={{ display:"flex", justifyContent:msg.mine?"flex-end":"flex-start" }}>
+                  {(chats[chatKey(activeChat)]||[]).map((msg, i) => (
+                    <div key={msg.id || i} style={{ display:"flex", justifyContent:msg.mine?"flex-end":"flex-start" }}>
                       {!msg.mine && (
                         <div style={{ width:28, height:28, borderRadius:"50%", background:avatarColor(msg.from),
                           display:"flex", alignItems:"center", justifyContent:"center",
@@ -254,7 +352,6 @@ function NotificationPanel({ userData }) {
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Input bar */}
                 <div style={{ padding:"10px 14px", borderTop:"1px solid "+C.border,
                   display:"flex", gap:8, alignItems:"center" }}>
                   <input
@@ -281,11 +378,11 @@ function NotificationPanel({ userData }) {
             )}
 
             {/* Footer */}
-            {!activeChat && (
+            {!activeChat && tab === "notifications" && unreadNotifs > 0 && (
               <div style={{ padding:"10px 18px", borderTop:"1px solid "+C.border,
                 background:"#fafafa", textAlign:"center" }}>
-                <span onClick={async()=>{if(tab==="notifications"){await Promise.all(notifications.filter(n=>!n.read).map(n=>api.patch(`/notifications/${n._id}/read`,{}).catch(()=>null)));setNotifications(prev=>prev.map(n=>({...n,read:true})));}else setTab("messages");}} style={{ fontSize:12, color:C.accent, cursor:"pointer", fontWeight:600 }}>
-                  {tab==="notifications" ? "Mark all as read" : "New Message"}
+                <span onClick={markAllRead} style={{ fontSize:12, color:C.accent, cursor:"pointer", fontWeight:600 }}>
+                  Mark all as read
                 </span>
               </div>
             )}

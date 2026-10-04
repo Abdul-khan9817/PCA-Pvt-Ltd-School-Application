@@ -47,6 +47,8 @@ function TeacherTimetable({ userData }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDay, setSelectedDay] = useState("");
+  const [dayOpen, setDayOpen] = useState(false);
+  const [classOpen, setClassOpen] = useState(false);
   const isSmall = useMediaQuery("(max-width: 1024px)");
 
   const myId = String(userData?._id || userData?.id || "");
@@ -162,26 +164,51 @@ function TeacherTimetable({ userData }) {
     const dayEntries = entries.filter(i => i.day === day).sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
     const now = nowHHMM();
     const isToday = day === today;
+    const dayText = d => `${d}${d === today ? " (Today)" : ""}`;
 
     return (
       <div>
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, marginBottom: 14, WebkitOverflowScrolling: "touch" }}>
-          {days.map(d => {
-            const t = dayThemes[d];
-            const on = d === day;
-            const count = entries.filter(e => e.day === d).length;
-            return (
-              <button key={d} type="button" onClick={() => setSelectedDay(d)} style={{
-                flex: "1 0 auto", minWidth: 58, padding: "9px 12px", borderRadius: 12, cursor: "pointer",
-                border: `1.5px solid ${on ? t.header : C.border}`, background: on ? t.header : C.white,
-                color: on ? "#fff" : C.text, fontWeight: 700, fontSize: 13, position: "relative", lineHeight: 1.2
-              }}>
-                {d.slice(0, 3)}
-                <div style={{ fontSize: 10, fontWeight: 500, opacity: 0.8 }}>{count} {count === 1 ? "class" : "classes"}</div>
-                {d === today && <span style={{ position: "absolute", top: 5, right: 6, width: 7, height: 7, borderRadius: "50%", background: on ? "#fde68a" : "#f59e0b" }} />}
-              </button>
-            );
-          })}
+        <div style={{ position: "relative", marginBottom: 14 }}>
+          {dayOpen && <div onClick={() => setDayOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />}
+          <button
+            type="button"
+            onClick={() => setDayOpen(o => !o)}
+            style={{
+              width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 8, cursor: "pointer",
+              border: `1.5px solid ${theme.header}`, background: theme.header, color: "#fff",
+              fontSize: 14, fontWeight: 700, textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8
+            }}
+          >
+            <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dayText(day)}</span>
+            <span style={{ fontSize: 11, transform: dayOpen ? "rotate(180deg)" : "none" }}>▼</span>
+          </button>
+
+          {dayOpen && (
+            <div style={{
+              position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 10, boxSizing: "border-box",
+              background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden",
+              boxShadow: "0 8px 20px rgba(15,23,42,.15)"
+            }}>
+              {days.map(d => {
+                const on = d === day;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => { setSelectedDay(d); setDayOpen(false); }}
+                    style={{
+                      display: "block", width: "100%", boxSizing: "border-box", padding: "11px 12px", border: "none",
+                      borderLeft: `4px solid ${dayThemes[d].header}`, cursor: "pointer", textAlign: "left",
+                      background: on ? dayThemes[d].bg : C.white, color: dayThemes[d].accent,
+                      fontSize: 14, fontWeight: on ? 700 : 600
+                    }}
+                  >
+                    {dayText(d)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div style={{ fontSize: 13, color: C.muted, marginBottom: 10, fontWeight: 600 }}>{day}{isToday ? " · Today" : ""}</div>
@@ -232,10 +259,47 @@ function TeacherTimetable({ userData }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
           <div style={{ fontWeight: 700, fontSize: 16, flex: "1 1 auto" }}>Class Timetable</div>
           {classes.length > 0 && (
-            <select value={classId} onChange={e => setClassId(e.target.value)}
-              style={{ padding: "9px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, fontSize: 13, minWidth: 150, flex: isSmall ? "1 1 100%" : "0 0 auto" }}>
-              {classes.map(c => <option key={idOf(c)} value={idOf(c)}>{classLabel(c)}</option>)}
-            </select>
+            <div style={{ position: "relative", minWidth: 150, flex: isSmall ? "1 1 100%" : "0 0 auto" }}>
+              {classOpen && <div onClick={() => setClassOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />}
+              <button
+                type="button"
+                onClick={() => setClassOpen(o => !o)}
+                style={{
+                  width: "100%", boxSizing: "border-box", padding: "9px 12px", borderRadius: 8, cursor: "pointer",
+                  border: `1px solid ${C.border}`, background: C.white, color: C.text, fontSize: 13,
+                  textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8
+                }}
+              >
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{classLabel(selectedClass) || "Select class"}</span>
+                <span style={{ fontSize: 10, color: C.muted, transform: classOpen ? "rotate(180deg)" : "none" }}>▼</span>
+              </button>
+
+              {classOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 10, boxSizing: "border-box",
+                  maxHeight: 240, overflowY: "auto", background: C.white, border: `1px solid ${C.border}`, borderRadius: 8,
+                  boxShadow: "0 8px 20px rgba(15,23,42,.15)"
+                }}>
+                  {classes.map(c => {
+                    const on = String(idOf(c)) === String(classId);
+                    return (
+                      <button
+                        key={idOf(c)}
+                        type="button"
+                        onClick={() => { setClassId(String(idOf(c))); setClassOpen(false); }}
+                        style={{
+                          display: "block", width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "none",
+                          cursor: "pointer", textAlign: "left", background: on ? "#eff6ff" : C.white,
+                          color: on ? "#1d4ed8" : C.text, fontSize: 13, fontWeight: on ? 700 : 500
+                        }}
+                      >
+                        {classLabel(c)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </div>
 

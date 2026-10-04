@@ -22,7 +22,7 @@ export async function staffOptions(req,res){
 
 export async function list(req,res){
   const q={};
-  if(req.user.role==='teacher'){
+  if(['teacher', 'principal', 'vice_principal'].includes(req.user.role)){
     const staff=await Staff.findOne({user:req.user._id}).select('_id');
     q.staff=staff?._id||null;
   } else if(req.query.staff) q.staff=req.query.staff;

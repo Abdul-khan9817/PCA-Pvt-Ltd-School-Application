@@ -2,7 +2,7 @@ import Class from '../models/Class.js';
 import Subject from '../models/Subject.js';
 
 export async function getTeacherAccess(userId, role = 'teacher') {
-  if (role !== 'teacher') {
+  if (role === 'admin') {
     const [classes, subjects] = await Promise.all([
       Class.find({}).select('_id'),
       Subject.find({}).select('_id'),
