@@ -281,7 +281,7 @@ async function studentSummary(req,res){
 
 	const match={status:'active'};
 
-	if(req.user.role==='teacher'){
+	if(['teacher','vice_principal'].includes(req.user.role)){
 		const classIds=await resolveTeacherClassIds(req.user._id);
 		match.classId={ $in:classIds };
 	}
@@ -312,10 +312,16 @@ async function studentSummary(req,res){
 
 async function studentsByGrade(req,res){
 
-	const classes=await Class.find({
+	const classQuery={
 		gradeLevel:req.params.gradeLevel,
 		status:'active'
-	}).select('_id');
+	};
+
+	if(['teacher','vice_principal'].includes(req.user.role)){
+		classQuery._id={$in:await resolveTeacherClassIds(req.user._id)};
+	}
+
+	const classes=await Class.find(classQuery).select('_id');
 
 	const data=await Student.find({
 		classId:{
