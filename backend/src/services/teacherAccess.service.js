@@ -13,18 +13,17 @@ export async function getTeacherAccess(userId, role = 'teacher') {
     };
   }
 
-  const [classesAsClassTeacher, taughtSubjects] = await Promise.all([
+  const [assignedClasses, taughtSubjects] = await Promise.all([
     Class.find({ classTeacher: userId }).select('_id'),
-    Subject.find({ teacherIds: userId }).select('_id classIds'),
+    Subject.find({ teacherIds: userId }).select('_id'),
   ]);
 
-  const classIds = new Set(classesAsClassTeacher.map(item => String(item._id)));
-  const subjectIds = new Set(taughtSubjects.map(item => String(item._id)));
-  for (const subject of taughtSubjects) {
-    for (const classId of subject.classIds || []) classIds.add(String(classId));
-  }
+  // Class access comes ONLY from classes the admin assigned to this user
+  // as class teacher. Subjects never add extra classes.
+  const classIds = assignedClasses.map(item => String(item._id));
+  const subjectIds = taughtSubjects.map(item => String(item._id));
 
-  return { classIds: [...classIds], subjectIds: [...subjectIds] };
+  return { classIds, subjectIds };
 }
 
 export async function resolveTeacherClassIds(userId) {
