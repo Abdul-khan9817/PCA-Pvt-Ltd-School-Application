@@ -12,13 +12,6 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="shortcut icon" href="/favicon.svg" />
 
-
-
-    <!--
-      Inline critical CSS: paint a matching background colour immediately so
-      the user sees the correct background before the stylesheet loads.
-      This also prevents a white flash (FOUC) on slow connections.
-    -->
     <style>
       html, body, #root {
         margin: 0;
@@ -29,16 +22,48 @@
         width: 100%;
         overflow: hidden;
       }
-      /* Inline loading state so the screen is never blank */
-      #root:empty::after {
-        content: '';
-        display: block;
+
+      /* Splash screen: shows instantly, React replaces it on mount */
+      .splash {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 14px;
+        background: linear-gradient(135deg, #1e2a4a, #0f172a);
+        color: #fff; text-align: center; padding: 24px;
+      }
+      .splash-logo {
+        width: 72px; height: 72px; border-radius: 18px;
+        display: grid; place-items: center;
+        background: #3b82f6; font-weight: 700; font-size: 22px; letter-spacing: 1px;
+        animation: splash-pulse 1.8s ease-in-out infinite;
+      }
+      .splash-bar {
+        width: 160px; height: 4px; border-radius: 4px;
+        background: rgba(255,255,255,.15); overflow: hidden; margin-top: 8px;
+      }
+      .splash-bar span {
+        display: block; width: 40%; height: 100%;
+        background: #3b82f6; border-radius: 4px;
+        animation: splash-slide 1.2s ease-in-out infinite;
+      }
+      .splash-title { margin: 8px 0 0; font-size: 18px; font-weight: 600; }
+      .splash-sub { margin: 0; font-size: 13px; opacity: .7; }
+      @keyframes splash-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+      @keyframes splash-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.06); }
       }
     </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="splash">
+        <div class="splash-logo">PCA</div>
+        <div class="splash-bar"><span></span></div>
+        <p class="splash-title">PCA Pvt. Ltd.</p>
+        <p class="splash-sub">Loading your workspace…</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-

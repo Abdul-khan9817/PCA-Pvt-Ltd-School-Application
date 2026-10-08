@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, Search, motion } from "../../shared/ui";
 import { C } from "../../shared/runtime";
+import { Portal } from "../common/Portal";
 
 export function MultiSelectDropdown({
   label,
@@ -15,14 +16,25 @@ export function MultiSelectDropdown({
   getLabel = option => option?.name || "Unnamed",
   getSecondary = () => "",
   accent = C.accent,
+  single = false,
+  searchable = true,
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [rect, setRect] = useState(null);
   const wrapperRef = useRef(null);
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const updateRect = useCallback(() => {
+    if (triggerRef.current) setRect(triggerRef.current.getBoundingClientRect());
+  }, []);
 
   useEffect(() => {
     const handleOutsideClick = event => {
-      if (!wrapperRef.current?.contains(event.target)) {
+      const inTrigger = wrapperRef.current?.contains(event.target);
+      const inMenu = menuRef.current?.contains(event.target);
+      if (!inTrigger && !inMenu) {
         setOpen(false);
         setQuery("");
       }
@@ -31,6 +43,27 @@ export function MultiSelectDropdown({
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
+
+  // Keep the floating menu attached to its field while the page/modal scrolls or resizes
+  useEffect(() => {
+    if (!open) return;
+    window.addEventListener("scroll", updateRect, true);
+    window.addEventListener("resize", updateRect);
+    return () => {
+      window.removeEventListener("scroll", updateRect, true);
+      window.removeEventListener("resize", updateRect);
+    };
+  }, [open, updateRect]);
+
+  const toggleOpen = () => {
+    if (disabled) return;
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    updateRect();
+    setOpen(true);
+  };
 
   const selected = Array.isArray(selectedIds) ? selectedIds.map(String) : [];
   const safeOptions = Array.isArray(options) ? options : [];
@@ -41,12 +74,22 @@ export function MultiSelectDropdown({
     return !normalizedQuery || optionLabel.includes(normalizedQuery) || secondaryLabel.includes(normalizedQuery);
   });
 
+  const selectedOption = single && selected.length
+    ? safeOptions.find(option => String(getId(option)) === selected[0])
+    : null;
+
   const allFilteredSelected =
     filteredOptions.length > 0 &&
     filteredOptions.every(option => selected.includes(String(getId(option))));
 
   const toggleOption = id => {
     const value = String(id);
+    if (single) {
+      onChange(selected.includes(value) ? [] : [value]);
+      setOpen(false);
+      setQuery("");
+      return;
+    }
     onChange(
       selected.includes(value)
         ? selected.filter(item => item !== value)
@@ -65,6 +108,13 @@ export function MultiSelectDropdown({
     );
   };
 
+  // Keep the menu fully on screen: open upward when there is not enough room
+  // below, and shrink the options list to the space available.
+  const spaceBelow = rect ? window.innerHeight - rect.bottom - 12 : 0;
+  const spaceAbove = rect ? rect.top - 12 : 0;
+  const openUp = spaceBelow < 260 && spaceAbove > spaceBelow;
+  const optionsMaxHeight = Math.max(100, Math.min(220, (openUp ? spaceAbove : spaceBelow) - 100));
+
   return (
     <div ref={wrapperRef} style={{ marginBottom: 16, position: "relative" }}>
       <label style={styles.label}>
@@ -73,11 +123,12 @@ export function MultiSelectDropdown({
       </label>
 
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
-        onClick={() => !disabled && setOpen(value => !value)}
+        onClick={toggleOpen}
         style={{
           ...styles.trigger,
           borderColor: open ? accent : C.border,
@@ -89,79 +140,93 @@ export function MultiSelectDropdown({
         <span>
           {disabled
             ? "Loading..."
-            : selected.length
-              ? `${selected.length} ${label.toLowerCase()} selected`
-              : placeholder}
+            : single
+              ? (selectedOption ? getLabel(selectedOption) : placeholder)
+              : selected.length
+                ? `${selected.length} ${label.toLowerCase()} selected`
+                : placeholder}
         </span>
         <span aria-hidden="true">{open ? "▲" : "▼"}</span>
       </button>
 
-      <AnimatePresence>
-        {open && !disabled && (
-          <motion.div
-            role="listbox"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={styles.menu}
-          >
-            <div style={styles.searchRow}>
-              <Search size={14} color={C.muted} aria-hidden="true" />
-              <input
-                type="search"
-                value={query}
-                onChange={event => setQuery(event.target.value)}
-                placeholder={`Search ${label.toLowerCase()}...`}
-                aria-label={`Search ${label.toLowerCase()}`}
-                autoFocus
-                style={styles.searchInput}
-              />
-            </div>
-
-            {filteredOptions.length > 0 && (
-              <button type="button" onClick={toggleAll} style={styles.selectAll}>
-                {allFilteredSelected ? "Unselect All" : "Select All"}
-              </button>
-            )}
-
-            <div style={styles.options}>
-              {!filteredOptions.length ? (
-                <div style={styles.emptyState}>
-                  {safeOptions.length ? "No matching results" : emptyText}
+      <Portal>
+        <AnimatePresence>
+          {open && !disabled && rect && (
+            <motion.div
+              ref={menuRef}
+              role="listbox"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                ...styles.menu,
+                left: rect.left,
+                width: rect.width,
+                ...(openUp
+                  ? { bottom: window.innerHeight - rect.top + 6 }
+                  : { top: rect.bottom + 6 }),
+              }}
+            >
+              {searchable && (
+                <div style={styles.searchRow}>
+                  <Search size={14} color={C.muted} aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={event => setQuery(event.target.value)}
+                    placeholder={`Search ${label.toLowerCase()}...`}
+                    aria-label={`Search ${label.toLowerCase()}`}
+                    autoFocus
+                    style={styles.searchInput}
+                  />
                 </div>
-              ) : (
-                filteredOptions.map(option => {
-                  const id = String(getId(option));
-                  const checked = selected.includes(id);
-                  const secondary = getSecondary(option);
-
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      role="option"
-                      aria-selected={checked}
-                      onClick={() => toggleOption(id)}
-                      style={{
-                        ...styles.option,
-                        background: checked ? `${accent}0d` : "transparent",
-                      }}
-                    >
-                      <span style={{ ...styles.checkmark, color: accent }} aria-hidden="true">
-                        {checked ? "✓" : ""}
-                      </span>
-                      <span>
-                        <strong>{getLabel(option)}</strong>
-                        {secondary && <small style={styles.secondary}>{secondary}</small>}
-                      </span>
-                    </button>
-                  );
-                })
               )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+              {!single && filteredOptions.length > 0 && (
+                <button type="button" onClick={toggleAll} style={styles.selectAll}>
+                  {allFilteredSelected ? "Unselect All" : "Select All"}
+                </button>
+              )}
+
+              <div style={{ ...styles.options, maxHeight: optionsMaxHeight }}>
+                {!filteredOptions.length ? (
+                  <div style={styles.emptyState}>
+                    {safeOptions.length ? "No matching results" : emptyText}
+                  </div>
+                ) : (
+                  filteredOptions.map(option => {
+                    const id = String(getId(option));
+                    const checked = selected.includes(id);
+                    const secondary = getSecondary(option);
+
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        role="option"
+                        aria-selected={checked}
+                        onClick={() => toggleOption(id)}
+                        style={{
+                          ...styles.option,
+                          background: checked ? `${accent}0d` : "transparent",
+                        }}
+                      >
+                        <span style={{ ...styles.checkmark, color: accent }} aria-hidden="true">
+                          {checked ? "✓" : ""}
+                        </span>
+                        <span>
+                          <strong>{getLabel(option)}</strong>
+                          {secondary && <small style={styles.secondary}>{secondary}</small>}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Portal>
     </div>
   );
 }
@@ -190,12 +255,8 @@ const styles = {
     boxSizing: "border-box",
   },
   menu: {
-    position: "absolute",
+    position: "fixed",
     zIndex: 10020,
-    left: 0,
-    right: 0,
-    top: "100%",
-    marginTop: 6,
     overflow: "hidden",
     background: "#fff",
     border: "1px solid #dbe4ff",

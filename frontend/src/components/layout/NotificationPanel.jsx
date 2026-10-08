@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence, LayoutDashboard, GraduationCap, Users, BookOpen, ClipboardCheck, ListChecks, Megaphone, Calendar, DollarSign, UserCircle, LogOut, Bell, Search, ChevronDown, TrendingUp, Star, AlertTriangle, Eye, Trash2, Edit, Plus, X, Check, Clock, BarChart2, Award, Briefcase, Mail, Phone, Shield, CheckSquare, Settings2, Home, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "../../shared/ui";
 import { api } from "../../services/apiClient";
 import { C, initials, avatarColors, avatarColor } from "../../shared/runtime";
@@ -45,6 +46,7 @@ function NotificationPanel({ userData }) {
   const [notifications, setNotifications] = useState([]);
   const [, setTick] = useState(0); // re-render every minute so "x min ago" stays fresh
   const panelRef = useRef(null);
+  const popupRef = useRef(null);
   const chatEndRef = useRef(null);
 
   const chatKey = (m) => m?.fromId || m?.id;
@@ -123,7 +125,11 @@ function NotificationPanel({ userData }) {
   const unreadCount  = unreadNotifs + unreadMsgs;
 
   useEffect(() => {
-    const h = e => { if (panelRef.current && !panelRef.current.contains(e.target)) { setOpen(false); setActiveChat(null); } };
+    const h = e => {
+      const insideBell = panelRef.current && panelRef.current.contains(e.target);
+      const insidePopup = popupRef.current && popupRef.current.contains(e.target);
+      if (!insideBell && !insidePopup) { setOpen(false); setActiveChat(null); }
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
@@ -198,197 +204,206 @@ function NotificationPanel({ userData }) {
         )}
       </motion.button>
 
-      {/* Panel */}
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ opacity:0, y:-10, scale:0.96 }} animate={{ opacity:1, y:0, scale:1 }}
-            exit={{ opacity:0, y:-10, scale:0.96 }} transition={{ duration:0.18 }}
-            style={{ position:"absolute", top:"calc(100% + 12px)", right:0, width:380,
-              background:C.white, borderRadius:16, boxShadow:"0 16px 48px rgba(0,0,0,.18)",
-              overflow:"hidden", zIndex:999 }}>
+      {/* Panel — rendered on document.body so it opens centered on the page */}
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <motion.div ref={popupRef}
+              initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.18 }}
+              onClick={e => { if (e.target === e.currentTarget) { setOpen(false); setActiveChat(null); } }}
+              style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:9999,
+                background:"rgba(15,23,42,.45)", display:"flex", alignItems:"center",
+                justifyContent:"center", padding:12, boxSizing:"border-box" }}>
+              <motion.div initial={{ opacity:0, y:-10, scale:0.96 }} animate={{ opacity:1, y:0, scale:1 }}
+                exit={{ opacity:0, y:-10, scale:0.96 }} transition={{ duration:0.18 }}
+                style={{ width:"min(380px, 100%)", maxHeight:"100%", overflowY:"auto",
+                  background:C.white, borderRadius:16, boxShadow:"0 16px 48px rgba(0,0,0,.18)" }}>
 
-            {/* Header */}
-            <div style={{ background:"linear-gradient(135deg,#1e2a4a,#2d3f6e)", padding:"16px 20px" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                <div style={{ color:"#fff", fontWeight:700, fontSize:15 }}>
-                  {activeChat ? (
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <motion.button type="button" whileHover={{ scale:1.1 }} onClick={() => setActiveChat(null)}
-                        style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:8,
-                          width:28, height:28, cursor:"pointer", color:"#fff", fontSize:14,
-                          display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        ←
-                      </motion.button>
-                      {activeChat.from}
-                    </div>
-                  ) : tab === "notifications" ? "Notifications" : "Messages"}
-                </div>
-                <button type="button" onClick={() => { setOpen(false); setActiveChat(null); }}
-                  style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:8,
-                    width:28, height:28, cursor:"pointer", color:"#fff", fontSize:14,
-                    display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  ✕
-                </button>
-              </div>
-
-              {/* Tabs */}
-              {!activeChat && (
-                <div style={{ display:"flex", gap:6 }}>
-                  {[["notifications","🔔 Notifications", unreadNotifs],["messages","💬 Messages", unreadMsgs]].map(([key,label,count])=>(
-                    <motion.button type="button" key={key} whileHover={{ scale:1.03 }} onClick={() => setTab(key)}
-                      style={{ flex:1, padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
-                        fontWeight:600, fontSize:12,
-                        background:tab===key?"rgba(255,255,255,.25)":"rgba(255,255,255,.08)",
-                        color:"#fff" }}>
-                      {label}
-                      {count>0 && (
-                        <span style={{ marginLeft:6, background:C.red, borderRadius:10,
-                          padding:"1px 6px", fontSize:10 }}>
-                          {count}
-                        </span>
-                      )}
-                    </motion.button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Notifications list (real data only) */}
-            {!activeChat && tab === "notifications" && (
-              <div style={{ maxHeight:360, overflowY:"auto" }}>
-                {notifications.length === 0 && emptyBox("🔔", "No notifications yet")}
-                {notifications.map((n,i) => {
-                  const st = typeStyle(n.type);
-                  const body = n.message || n.text || n.title || "";
-                  return (
-                    <motion.div key={n._id || i} onClick={() => markRead(n)} whileHover={{ background:"#f8fafc" }}
-                      style={{ display:"flex", gap:12, padding:"14px 18px",
-                        borderBottom:i<notifications.length-1?"1px solid "+C.border:"none",
-                        cursor:"pointer", background:n.read?C.white:"#fafbff" }}>
-                      <div style={{ width:38, height:38, borderRadius:10, background:st.color, flexShrink:0,
-                        display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
-                        {st.icon}
-                      </div>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        {n.title && n.message && (
-                          <div style={{ fontSize:13, color:C.text, fontWeight:700, lineHeight:1.4 }}>{n.title}</div>
-                        )}
-                        <div style={{ fontSize:13, color:C.text, fontWeight:n.title&&n.message?400:500, lineHeight:1.4 }}>
-                          {n.title && n.message ? n.message : body}
+                {/* Header */}
+                <div style={{ background:"linear-gradient(135deg,#1e2a4a,#2d3f6e)", padding:"16px 20px" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                    <div style={{ color:"#fff", fontWeight:700, fontSize:15 }}>
+                      {activeChat ? (
+                        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                          <motion.button type="button" whileHover={{ scale:1.1 }} onClick={() => setActiveChat(null)}
+                            style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:8,
+                              width:28, height:28, cursor:"pointer", color:"#fff", fontSize:14,
+                              display:"flex", alignItems:"center", justifyContent:"center" }}>
+                            ←
+                          </motion.button>
+                          {activeChat.from}
                         </div>
-                        <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>{timeAgo(n.createdAt)}</div>
-                      </div>
-                      {!n.read && (
-                        <div style={{ width:8, height:8, borderRadius:"50%", background:st.dot, flexShrink:0, marginTop:4 }} />
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Messages list */}
-            {!activeChat && tab === "messages" && (
-              <div style={{ maxHeight:360, overflowY:"auto" }}>
-                {messages.length === 0 && emptyBox("💬", "No messages yet")}
-                {messages.map((msg,i) => (
-                  <motion.div key={msg.id} whileHover={{ background:"#f8fafc" }}
-                    onClick={() => openChat(msg)}
-                    style={{ display:"flex", gap:12, padding:"14px 18px",
-                      borderBottom:i<messages.length-1?"1px solid "+C.border:"none",
-                      cursor:"pointer", background:msg.unread?"#fafbff":C.white }}>
-                    <div style={{ width:40, height:40, borderRadius:"50%", background:avatarColor(msg.from),
-                      display:"flex", alignItems:"center", justifyContent:"center",
-                      color:"#fff", fontSize:13, fontWeight:700, flexShrink:0 }}>
-                      {initials(msg.from)}
+                      ) : tab === "notifications" ? "Notifications" : "Messages"}
                     </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:13, fontWeight:msg.unread?700:600, color:C.text }}>{msg.from}</span>
-                        <span style={{ fontSize:10, color:C.muted }}>{msg.time}</span>
-                      </div>
-                      <div style={{ fontSize:11, color:C.muted, marginTop:2,
-                        whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                        {msg.text}
-                      </div>
-                    </div>
-                    {msg.unread && (
-                      <div style={{ width:8, height:8, borderRadius:"50%", background:C.accent, flexShrink:0, marginTop:6 }} />
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            )}
+                    <button type="button" onClick={() => { setOpen(false); setActiveChat(null); }}
+                      style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:8,
+                        width:28, height:28, cursor:"pointer", color:"#fff", fontSize:14,
+                        display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      ✕
+                    </button>
+                  </div>
 
-            {/* Chat window */}
-            {activeChat && (
-              <div style={{ display:"flex", flexDirection:"column", height:380 }}>
-                <div style={{ flex:1, overflowY:"auto", padding:"14px 16px", display:"flex", flexDirection:"column", gap:10 }}>
-                  {(chats[chatKey(activeChat)]||[]).map((msg, i) => (
-                    <div key={msg.id || i} style={{ display:"flex", justifyContent:msg.mine?"flex-end":"flex-start" }}>
-                      {!msg.mine && (
-                        <div style={{ width:28, height:28, borderRadius:"50%", background:avatarColor(msg.from),
+                  {/* Tabs */}
+                  {!activeChat && (
+                    <div style={{ display:"flex", gap:6 }}>
+                      {[["notifications","🔔 Notifications", unreadNotifs],["messages","💬 Messages", unreadMsgs]].map(([key,label,count])=>(
+                        <motion.button type="button" key={key} whileHover={{ scale:1.03 }} onClick={() => setTab(key)}
+                          style={{ flex:1, padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
+                            fontWeight:600, fontSize:12,
+                            background:tab===key?"rgba(255,255,255,.25)":"rgba(255,255,255,.08)",
+                            color:"#fff" }}>
+                          {label}
+                          {count>0 && (
+                            <span style={{ marginLeft:6, background:C.red, borderRadius:10,
+                              padding:"1px 6px", fontSize:10 }}>
+                              {count}
+                            </span>
+                          )}
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Notifications list (real data only) */}
+                {!activeChat && tab === "notifications" && (
+                  <div style={{ maxHeight:360, overflowY:"auto" }}>
+                    {notifications.length === 0 && emptyBox("🔔", "No notifications yet")}
+                    {notifications.map((n,i) => {
+                      const st = typeStyle(n.type);
+                      const body = n.message || n.text || n.title || "";
+                      return (
+                        <motion.div key={n._id || i} onClick={() => markRead(n)} whileHover={{ background:"#f8fafc" }}
+                          style={{ display:"flex", gap:12, padding:"14px 18px",
+                            borderBottom:i<notifications.length-1?"1px solid "+C.border:"none",
+                            cursor:"pointer", background:n.read?C.white:"#fafbff" }}>
+                          <div style={{ width:38, height:38, borderRadius:10, background:st.color, flexShrink:0,
+                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
+                            {st.icon}
+                          </div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            {n.title && n.message && (
+                              <div style={{ fontSize:13, color:C.text, fontWeight:700, lineHeight:1.4 }}>{n.title}</div>
+                            )}
+                            <div style={{ fontSize:13, color:C.text, fontWeight:n.title&&n.message?400:500, lineHeight:1.4 }}>
+                              {n.title && n.message ? n.message : body}
+                            </div>
+                            <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>{timeAgo(n.createdAt)}</div>
+                          </div>
+                          {!n.read && (
+                            <div style={{ width:8, height:8, borderRadius:"50%", background:st.dot, flexShrink:0, marginTop:4 }} />
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Messages list */}
+                {!activeChat && tab === "messages" && (
+                  <div style={{ maxHeight:360, overflowY:"auto" }}>
+                    {messages.length === 0 && emptyBox("💬", "No messages yet")}
+                    {messages.map((msg,i) => (
+                      <motion.div key={msg.id} whileHover={{ background:"#f8fafc" }}
+                        onClick={() => openChat(msg)}
+                        style={{ display:"flex", gap:12, padding:"14px 18px",
+                          borderBottom:i<messages.length-1?"1px solid "+C.border:"none",
+                          cursor:"pointer", background:msg.unread?"#fafbff":C.white }}>
+                        <div style={{ width:40, height:40, borderRadius:"50%", background:avatarColor(msg.from),
                           display:"flex", alignItems:"center", justifyContent:"center",
-                          color:"#fff", fontSize:10, fontWeight:700, flexShrink:0, marginRight:8, alignSelf:"flex-end" }}>
+                          color:"#fff", fontSize:13, fontWeight:700, flexShrink:0 }}>
                           {initials(msg.from)}
                         </div>
-                      )}
-                      <div style={{ maxWidth:"72%" }}>
-                        <div style={{
-                          background:msg.mine?"linear-gradient(135deg,#4f6ef7,#7c3aed)":"#f0f2f8",
-                          color:msg.mine?"#fff":C.text,
-                          borderRadius:msg.mine?"16px 16px 4px 16px":"16px 16px 16px 4px",
-                          padding:"9px 13px", fontSize:13, lineHeight:1.4
-                        }}>
-                          {msg.text}
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                            <span style={{ fontSize:13, fontWeight:msg.unread?700:600, color:C.text }}>{msg.from}</span>
+                            <span style={{ fontSize:10, color:C.muted }}>{msg.time}</span>
+                          </div>
+                          <div style={{ fontSize:11, color:C.muted, marginTop:2,
+                            whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                            {msg.text}
+                          </div>
                         </div>
-                        <div style={{ fontSize:10, color:C.muted, marginTop:3,
-                          textAlign:msg.mine?"right":"left" }}>
-                          {msg.time}
+                        {msg.unread && (
+                          <div style={{ width:8, height:8, borderRadius:"50%", background:C.accent, flexShrink:0, marginTop:6 }} />
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Chat window */}
+                {activeChat && (
+                  <div style={{ display:"flex", flexDirection:"column", height:380 }}>
+                    <div style={{ flex:1, overflowY:"auto", padding:"14px 16px", display:"flex", flexDirection:"column", gap:10 }}>
+                      {(chats[chatKey(activeChat)]||[]).map((msg, i) => (
+                        <div key={msg.id || i} style={{ display:"flex", justifyContent:msg.mine?"flex-end":"flex-start" }}>
+                          {!msg.mine && (
+                            <div style={{ width:28, height:28, borderRadius:"50%", background:avatarColor(msg.from),
+                              display:"flex", alignItems:"center", justifyContent:"center",
+                              color:"#fff", fontSize:10, fontWeight:700, flexShrink:0, marginRight:8, alignSelf:"flex-end" }}>
+                              {initials(msg.from)}
+                            </div>
+                          )}
+                          <div style={{ maxWidth:"72%" }}>
+                            <div style={{
+                              background:msg.mine?"linear-gradient(135deg,#4f6ef7,#7c3aed)":"#f0f2f8",
+                              color:msg.mine?"#fff":C.text,
+                              borderRadius:msg.mine?"16px 16px 4px 16px":"16px 16px 16px 4px",
+                              padding:"9px 13px", fontSize:13, lineHeight:1.4
+                            }}>
+                              {msg.text}
+                            </div>
+                            <div style={{ fontSize:10, color:C.muted, marginTop:3,
+                              textAlign:msg.mine?"right":"left" }}>
+                              {msg.time}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ))}
+                      <div ref={chatEndRef} />
                     </div>
-                  ))}
-                  <div ref={chatEndRef} />
-                </div>
 
-                <div style={{ padding:"10px 14px", borderTop:"1px solid "+C.border,
-                  display:"flex", gap:8, alignItems:"center" }}>
-                  <input
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={handleKey}
-                    placeholder={`Message ${activeChat.from}…`}
-                    style={{ flex:1, padding:"9px 14px", borderRadius:20,
-                      border:"1.5px solid "+C.border, fontSize:13, outline:"none",
-                      background:"#f8fafc" }}
-                  />
-                  <motion.button type="button" whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
-                    onClick={sendMessage}
-                    disabled={!input.trim()}
-                    style={{ width:36, height:36, borderRadius:"50%", border:"none",
-                      background:input.trim()?C.accent:"#e5e7eb",
-                      color:"#fff", cursor:input.trim()?"pointer":"default",
-                      display:"flex", alignItems:"center", justifyContent:"center",
-                      fontSize:16, transition:"background .15s" }}>
-                    ➤
-                  </motion.button>
-                </div>
-              </div>
-            )}
+                    <div style={{ padding:"10px 14px", borderTop:"1px solid "+C.border,
+                      display:"flex", gap:8, alignItems:"center" }}>
+                      <input
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
+                        onKeyDown={handleKey}
+                        placeholder={`Message ${activeChat.from}…`}
+                        style={{ flex:1, padding:"9px 14px", borderRadius:20,
+                          border:"1.5px solid "+C.border, fontSize:13, outline:"none",
+                          background:"#f8fafc" }}
+                      />
+                      <motion.button type="button" whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
+                        onClick={sendMessage}
+                        disabled={!input.trim()}
+                        style={{ width:36, height:36, borderRadius:"50%", border:"none",
+                          background:input.trim()?C.accent:"#e5e7eb",
+                          color:"#fff", cursor:input.trim()?"pointer":"default",
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                          fontSize:16, transition:"background .15s" }}>
+                        ➤
+                      </motion.button>
+                    </div>
+                  </div>
+                )}
 
-            {/* Footer */}
-            {!activeChat && tab === "notifications" && unreadNotifs > 0 && (
-              <div style={{ padding:"10px 18px", borderTop:"1px solid "+C.border,
-                background:"#fafafa", textAlign:"center" }}>
-                <span onClick={markAllRead} style={{ fontSize:12, color:C.accent, cursor:"pointer", fontWeight:600 }}>
-                  Mark all as read
-                </span>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                {/* Footer */}
+                {!activeChat && tab === "notifications" && unreadNotifs > 0 && (
+                  <div style={{ padding:"10px 18px", borderTop:"1px solid "+C.border,
+                    background:"#fafafa", textAlign:"center" }}>
+                    <span onClick={markAllRead} style={{ fontSize:12, color:C.accent, cursor:"pointer", fontWeight:600 }}>
+                      Mark all as read
+                    </span>
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

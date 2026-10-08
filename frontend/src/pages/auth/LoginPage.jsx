@@ -3,7 +3,7 @@ import { motion, Eye, EyeOff, GraduationCap, Mail, LockKeyhole, Users, Graduatio
 import { login } from "../../services/auth.service";
 import { setAccessToken } from "../../services/apiClient";
 
-export function LoginPage({ onLogin, onForgot }) {
+export function LoginPage({ onLogin }) {
   const [loginAs, setLoginAs] = useState("staff"); // "staff" | "student"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -140,11 +140,9 @@ export function LoginPage({ onLogin, onForgot }) {
             </button>
           </div>
 
-          <div className="edumanage-login-forgot-row">
-            <button type="button" onClick={onForgot} className="edumanage-login-forgot">
-              Forgot password?
-            </button>
-          </div>
+          <p style={{ fontSize: 12, textAlign: "center", opacity: 0.7, margin: "12px 0" }}>
+            Forgot your password? Contact your school administrator.
+          </p>
 
           <motion.button
             whileHover={{ y: -1 }}

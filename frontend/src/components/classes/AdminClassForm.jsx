@@ -4,11 +4,11 @@ import { FormField as Field } from "../common/FormField";
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
 
 const capacityOptions = Array.from({ length: 20 }, (_, index) => (index + 1) * 5);
+const capacityDropdownOptions = capacityOptions.map(value => ({ id: value, name: `${value} students` }));
 
 export function AdminClassForm({ form, setForm, teachers, students, subjects, selectedStudentIds, setSelectedStudentIds, selectedSubjectIds, setSelectedSubjectIds, loading, onCancel, onSubmit, saving, edit = false, saved = false }) {
   const set = (key, value) => setForm(previous => ({ ...previous, [key]: value }));
-  const selectTeacher = event => {
-    const id = event.target.value;
+  const selectTeacher = id => {
     const teacher = teachers.find(item => String(item.user?._id || item.user || item._id || item.id) === String(id));
     const name = teacher?.user?.name || teacher?.name || teacher?.fullName || "";
     setForm(previous => ({ ...previous, classTeacher: id, subjectTeacher: previous.subjectTeacher || name }));
@@ -20,11 +20,11 @@ export function AdminClassForm({ form, setForm, teachers, students, subjects, se
     <Field label="Section" value={form.section} onChange={value => set("section", value)} placeholder={edit ? undefined : "A"} />
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
       <Field label="Room Number" value={form.room} onChange={value => set("room", value)} placeholder={edit ? undefined : "101"} />
-      <div style={{ marginBottom: 14 }}><label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Capacity</label><select value={form.capacity} onChange={event => set("capacity", event.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid " + C.border, fontSize: 13, background: "#fff" }}>{capacityOptions.map(value => <option key={value} value={value}>{value} students</option>)}</select></div>
+      <MultiSelectDropdown single searchable={false} label="Capacity" options={capacityDropdownOptions} selectedIds={form.capacity ? [String(form.capacity)] : []} onChange={ids => set("capacity", ids[0] || form.capacity)} placeholder="Select capacity" accent="#4f6ef7" />
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
       <Field label="Subject Teacher" value={form.subjectTeacher} onChange={value => set("subjectTeacher", value)} placeholder="Enter subject teacher" />
-      <div style={{ marginBottom: 14 }}><label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Select Teacher</label><select value={form.classTeacher || ""} onChange={selectTeacher} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid " + C.border, fontSize: 13, background: "#fff" }}><option value="">Select Teacher...</option>{teacherOptions.map(item => <option key={item.id} value={item.id}>{item.name}{item.detail ? ` (${item.detail})` : ""}</option>)}</select></div>
+      <MultiSelectDropdown single label="Select Teacher" options={teacherOptions} selectedIds={form.classTeacher ? [String(form.classTeacher)] : []} onChange={ids => selectTeacher(ids[0] || "")} placeholder="Select Teacher..." emptyText="No teachers available" getLabel={item => item.name} getSecondary={item => item.detail} accent="#4f6ef7" />
     </div>
     <MultiSelectDropdown label="Students" icon={Users} options={students} selectedIds={selectedStudentIds} onChange={setSelectedStudentIds} disabled={loading} placeholder="Select students" emptyText="No active students available" getLabel={student => student.user?.name || student.name || student.fullName || "Unnamed Student"} getSecondary={student => student.roll ? `Roll ${student.roll}` : student.email || ""} accent="#4f6ef7" />
     <MultiSelectDropdown label="Subjects" icon={School} options={subjects} selectedIds={selectedSubjectIds} onChange={setSelectedSubjectIds} disabled={loading} placeholder="Select subjects" emptyText="No subjects available" getLabel={subject => subject.name || subject.title || "Unnamed Subject"} getSecondary={subject => subject.code || subject.subjectCode || subject.type || ""} accent="#8b5cf6" />

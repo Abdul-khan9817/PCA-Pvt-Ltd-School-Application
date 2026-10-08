@@ -87,6 +87,13 @@ function MultiSelectDropdownInner({
     onChange(selectedIds.filter(x => x !== id));
   };
 
+  // Keep the panel fully inside the screen: open upward when there is not
+  // enough room below, and shrink the options list to the space available.
+  const spaceBelow = rect ? window.innerHeight - rect.bottom - 12 : 0;
+  const spaceAbove = rect ? rect.top - 12 : 0;
+  const openUp = spaceBelow < 260 && spaceAbove > spaceBelow;
+  const listMaxHeight = Math.max(100, Math.min(200, (openUp ? spaceAbove : spaceBelow) - 100));
+
   return (
     <div style={{ marginBottom: 14 }}>
       <label
@@ -184,7 +191,9 @@ function MultiSelectDropdownInner({
             ref={panelRef}
             style={{
               position: "fixed",
-              top: rect.bottom + 6,
+              ...(openUp
+                ? { bottom: window.innerHeight - rect.top + 6 }
+                : { top: rect.bottom + 6 }),
               left: rect.left,
               width: rect.width,
               zIndex: 10000,
@@ -246,7 +255,7 @@ function MultiSelectDropdownInner({
               </div>
             </div>
 
-            <div style={{ maxHeight: 200, overflowY: "auto", padding: "4px 0" }}>
+            <div style={{ maxHeight: listMaxHeight, overflowY: "auto", padding: "4px 0" }}>
               {loading && (
                 <div style={{ padding: 16, textAlign: "center", fontSize: 13, color: C.muted }}>
                   Loading...

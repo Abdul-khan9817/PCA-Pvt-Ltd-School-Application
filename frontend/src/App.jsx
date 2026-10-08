@@ -5,12 +5,11 @@ import { Sidebar } from "./components/layout/Sidebar";
 import { Topbar } from "./components/layout/Topbar";
 import { renderPage } from "./app/renderPage";
 import { LoginPage } from "./pages/auth/LoginPage";
-import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
-import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
 import { me, logout } from "./services/auth.service";
 import { getAccessToken, setAccessToken } from "./services/apiClient";
 import { useMediaQuery } from "./hooks/useMediaQuery";
 import { initSocket, disconnectSocket } from "./services/socket.service";
+import PageLoader from "./components/common/PageLoader";
 
 
 const roleLabel = role => ({ 
@@ -45,12 +44,6 @@ export default function App() {
   const [collapsed, setCollapsed] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [authMode, setAuthMode] = useState(() => 
-    new URLSearchParams(window.location.search).has("resetToken") ? "reset" : "login"
-  );
-  const [resetToken, setResetToken] = useState(() => 
-    new URLSearchParams(window.location.search).get("resetToken") || ""
-  );
 
   // Boot: Check if already logged in
   useEffect(() => {
@@ -105,52 +98,11 @@ export default function App() {
   };
 
   // Show loading screen while checking auth
-  if (booting) {
-    return (
-      <div style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        background: C.bg,
-        fontFamily: "Inter,system-ui,sans-serif",
-        color: C.muted
-      }}>
-        Loading PCA Pvt. Ltd…
-      </div>
-    );
-  }
+  if (booting) return <PageLoader />;
 
   // Show login if not authenticated
   if (!user) {
-    if (authMode === "forgot") {
-      return (
-        <ForgotPasswordPage 
-          onBack={() => setAuthMode("login")} 
-          onResetToken={token => {
-            setResetToken(token);
-            setAuthMode("reset");
-          }}
-        />
-      );
-    }
-    if (authMode === "reset") {
-      return (
-        <ResetPasswordPage 
-          email={resetToken?.email}
-          otp={resetToken?.otp}
-          onBack={() => {
-            setAuthMode("login");
-            clearAuthUrl();
-          }}
-        />
-      );
-    }
-    return (
-      <LoginPage 
-        onLogin={handleLogin} 
-        onForgot={() => setAuthMode("forgot")}
-      />
-    );
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   // Get user role and check if supported
