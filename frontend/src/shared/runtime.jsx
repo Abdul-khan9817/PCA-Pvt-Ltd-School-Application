@@ -24,19 +24,24 @@ const calcGrade = score => score >= 90 ? "A+" : score >= 80 ? "A" : score >= 70 
 const gradeCol = grade => grade?.startsWith("A") ? C.teal : grade?.startsWith("B") ? C.accent : grade?.startsWith("C") ? C.purple : C.orange;
 
 const ADMIN_NAV = [
-  { section:"MAIN", items:[{ id:"dashboard", icon:LayoutDashboard, label:"Dashboard" }] },
-  { section:"ACADEMIC", items:[
-    { id:"classes", icon:BookOpen, label:"Classes" }, { id:"timetable", icon:Clock, label:"Timetable" },
-    { id:"students", icon:Users, label:"Students" }, { id:"teachers", icon:GraduationCap, label:"Staff" },
+  { section:"MAIN", items:[
+    { id:"dashboard", icon:LayoutDashboard, label:"Dashboard" },
+    { id:"user-accounts", icon:Users, label:"User Accounts" },
     { id:"subjects", icon:BookOpen, label:"Subjects" },
+    { id:"classes", icon:BookOpen, label:"Classes" },
+    { id:"timetable", icon:Clock, label:"Timetable" },
+    { id:"grades", icon:BarChart2, label:"Grades" },
+  ] },
+  { section:"ACADEMIC", items:[
+    { id:"students", icon:Users, label:"Students" }, { id:"teachers", icon:GraduationCap, label:"Staff" },
   ]},
   { section:"OPERATIONS", items:[
-    { id:"attendance", icon:ClipboardCheck, label:"Attendance" }, { id:"staff-attendance", icon:Calendar, label:"Staff Attendance" }, { id:"grades", icon:BarChart2, label:"Grades" },
+    { id:"attendance", icon:ClipboardCheck, label:"Attendance" }, { id:"staff-attendance", icon:Calendar, label:"Staff Attendance" },
     { id:"announcements", icon:Megaphone, label:"Announcements" },
   ]},
   { section:"FINANCE", items:[{ id:"fees", icon:DollarSign, label:"Fees" }, { id:"salary", icon:DollarSign, label:"Salary" }] },
   { section:"ACCOUNT", items:[
-    { id:"user-accounts", icon:Users, label:"User Accounts" }, { id:"profile", icon:UserCircle, label:"Profile" },
+    { id:"profile", icon:UserCircle, label:"Profile" },
     { id:"logout", icon:LogOut, label:"Logout" },
   ]},
 ];

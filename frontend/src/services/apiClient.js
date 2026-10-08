@@ -52,7 +52,7 @@ export async function request(path, options = {}, retry = true) {
   let result = await raw(path, options);
 
   // ✅ Auto-refresh token on 401 then retry once
-  if (result.response.status === 401 && retry && !path.startsWith('/auth/')) {
+    if (result.response.status === 401 && retry && !['/auth/login', '/auth/refresh'].some(p => path.startsWith(p))) {
     if (!refreshPromise) refreshPromise = refreshAccessToken();
     const token = await refreshPromise;
     refreshPromise = null;
